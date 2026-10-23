@@ -1,0 +1,198 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#6D28D9"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="ErrandCo"><link rel="apple-touch-icon" href="./icons/icon-180.png"><link rel="icon" href="./icons/icon-192.png">
+<title>ErrandCo Prototype</title>
+<script>/* ===== BRAND CONFIG — change here ===== */
+/* Accent options shown in the switcher (first = default). All pass WCAG AA with white text. */
+const ACCENTS=[{id:'indigo',name:'Electric indigo',hex:'#5B3FD9'},{id:'cobalt',name:'Cobalt',hex:'#1D4ED8'},{id:'violet',name:'Deep violet',hex:'#6D28D9'}];
+const BRAND={name:'ErrandCo',plus:'ErrandCo+',accent:'#6D28D9',onAccent:'#fff',ink:'#000',bg:'#fff'};</script>
+<style>
+:root{--accent:#6D28D9;--on-accent:#fff;--ink:#000;--bg:#fff;--soft:#F3F3F3;--muted:#6B6B6B;--line:#E8E8E8;--warn:#FFF4D6}
+*{box-sizing:border-box}body{margin:0;font-family:"Uber Move","Helvetica Neue",Inter,Arial,sans-serif;background:#E9E9E9;color:var(--ink)}
+.top{position:sticky;top:0;z-index:50;background:#000;color:#fff;display:flex;align-items:center;gap:6px;padding:8px 12px}
+.sw{display:flex;align-items:center;gap:6px;background:#1a1a1a;border-radius:20px;padding:4px 10px;margin-right:auto;font-size:12px;font-weight:600}.top .sw button{width:22px;height:22px;padding:0;flex:none;border-radius:50%;border:2px solid #000;cursor:pointer}.top .sw button.cur{outline:2px solid #fff}
+.top{flex-wrap:wrap}.top b{margin-right:8px;font-weight:800;letter-spacing:-.3px}.top button{background:#222;color:#fff;border:0;padding:8px 14px;border-radius:20px;cursor:pointer;font-weight:600}
+.top button.on{background:#fff;color:#000}
+.phone{position:relative;max-width:400px;height:820px;margin:14px auto;background:var(--bg);border-radius:32px;box-shadow:0 10px 30px #0003;overflow:hidden;display:flex;flex-direction:column}
+.full{position:absolute;inset:0}.full svg{width:100%;height:100%}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -6px 24px #0002;padding:10px 16px 16px;max-height:72%;overflow:auto;z-index:5}
+.sheet.tall{max-height:86%}.grab{width:40px;height:5px;border-radius:3px;background:#ccc;margin:0 auto 10px}
+.page{flex:1;overflow:auto;padding:16px;padding-bottom:70px}
+h1{font-size:28px;font-weight:800;letter-spacing:-.5px;margin:6px 0 12px}h3{font-size:18px;font-weight:800;margin:14px 0 8px}
+.where{display:flex;align-items:center;gap:10px;background:var(--soft);border-radius:30px;padding:14px 16px;font-size:20px;font-weight:700;cursor:pointer}
+.where .sq{width:10px;height:10px;background:var(--accent)}
+.btn{display:block;background:var(--ink);color:#fff;border:0;border-radius:10px;padding:16px;width:100%;font-size:17px;font-weight:700;cursor:pointer;margin-top:8px}
+.btn.a{background:var(--accent);color:var(--on-accent)}.btn.o{background:var(--soft);color:#000}.btn.sm{padding:10px;font-size:14px;width:auto;display:inline-block}
+.go{width:110px;height:110px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-size:30px;font-weight:900;border:6px solid #fff;box-shadow:0 6px 20px #0004;cursor:pointer}
+input,select{width:100%;padding:12px;border:0;background:var(--soft);border-radius:8px;margin:4px 0;font:inherit;font-size:15px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}.muted{color:var(--muted);font-size:13px}
+.chip{display:inline-block;padding:8px 12px;border-radius:18px;background:var(--soft);color:#000;margin:3px;font-size:13px;font-weight:600;cursor:pointer;border:0}
+.chip.on{background:var(--accent);color:var(--on-accent)}
+.tag{font-size:11px;padding:2px 8px;border-radius:4px;background:var(--soft);font-weight:700}.tag.a{background:var(--accent);color:var(--on-accent)}.tag.w{background:var(--warn)}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.li{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.li .ic{width:40px;height:40px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-size:18px;flex:none}
+.opt{display:flex;align-items:center;gap:12px;padding:12px;border:2px solid transparent;border-radius:12px;cursor:pointer}.opt.on{border-color:var(--ink)}
+.opt .p{margin-left:auto;font-weight:800}
+.stop{border-left:3px solid var(--line);padding-left:12px;margin:8px 0}.stop.d{border-color:var(--accent)}
+.nav{position:absolute;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid var(--line);z-index:10}
+.nav button{flex:1;background:none;border:0;padding:10px 2px;font-size:11px;color:var(--muted);cursor:pointer;font-weight:600}.nav button.on{color:#000;font-weight:800;box-shadow:inset 0 3px var(--accent)}
+.bubble{padding:10px 14px;border-radius:18px;margin:4px 0;max-width:80%}.me{background:#000;color:#fff;margin-left:auto}.them{background:var(--soft)}
+.chk{display:flex;gap:8px;align-items:center;margin:6px 0}.chk input{width:auto}
+.turn{background:#000;color:#fff;padding:14px 16px;display:flex;gap:12px;align-items:center;z-index:6;position:absolute;top:0;left:0;right:0}.turn .ar{font-size:28px;background:var(--accent);color:var(--on-accent);width:48px;height:48px;border-radius:10px;display:grid;place-items:center;flex:none}
+.pulse{width:120px;height:120px;border-radius:50%;background:var(--accent);opacity:.25;margin:20px auto;animation:p 1.4s infinite}@keyframes p{0%{transform:scale(.5);opacity:.5}100%{transform:scale(1.3);opacity:0}}
+.bar{height:6px;background:var(--soft);border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent)}
+.stars span{font-size:34px;cursor:pointer;color:#ccc}.stars span.on{color:#000}
+.wide{max-width:1200px;margin:14px auto;padding:0 14px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.kpi{font-size:30px;font-weight:800;letter-spacing:-.5px}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}th{font-size:12px;color:var(--muted);text-transform:uppercase}
+.fab{position:absolute;top:14px;left:14px;z-index:6;background:#fff;border-radius:50%;width:42px;height:42px;border:0;box-shadow:0 2px 8px #0003;font-size:18px;cursor:pointer}
+#mm{display:none}
+@media (max-width:600px){body{background:#fff}#mm{display:block;position:fixed;top:calc(env(safe-area-inset-top) + 10px);right:10px;z-index:100;width:40px;height:40px;border-radius:50%;border:0;background:#000c;color:#fff;font-size:18px}
+.top{display:none;position:fixed;top:calc(env(safe-area-inset-top) + 56px);right:10px;left:10px;border-radius:14px;z-index:99;box-shadow:0 8px 24px #0006}body.mopen .top{display:flex}
+.phone{max-width:none;height:100vh;height:100dvh;margin:0;border-radius:0;box-shadow:none;padding-top:env(safe-area-inset-top)}.nav{padding-bottom:env(safe-area-inset-bottom)}.wide{margin:0;padding:calc(env(safe-area-inset-top) + 8px) 12px 12px}}
+</style></head><body><button id="mm" aria-label="Prototype menu">☰</button>
+<div class="top"><b id="brandTop"></b><div class="sw" id="sw" aria-label="Accent color switcher"><span>Accent:</span><span id="swName"></span></div><button data-v="c" class="on">Customer</button><button data-v="r">Runner</button><button data-v="a">Owner</button></div>
+<div id="app"></div>
+<script>
+document.documentElement.style.setProperty('--accent',BRAND.accent);document.documentElement.style.setProperty('--on-accent',BRAND.onAccent);
+document.documentElement.style.setProperty('--ink',BRAND.ink);document.documentElement.style.setProperty('--bg',BRAND.bg);
+document.title=BRAND.name+' Prototype';document.getElementById('brandTop').textContent=BRAND.name+' · Prototype';
+const $=s=>document.querySelector(s);
+const S={view:'c',ct:'home',rt:'jobs',at:'live',stops:[
+ {type:'Groceries',place:'Stop & Shop, Great Neck',items:[['Milk 1 gal',4.49],['Eggs dozen',3.99],['Bananas',1.89]],note:''},
+ {type:'Personal pickup',place:'Grandma — 12 Elm St',items:[['Blue casserole dish (porch)',0]],note:'Under the bench'},
+ {type:'Drop-off',place:'Sister — 88 Middle Neck Rd',items:[['Casserole dish',0]],note:'Leave with doorman'}],
+ member:false,priority:'standard',trackStep:1,chat:[['them','Hi! I\'m Maya, heading to Stop & Shop now 🙂']],cap:null,tip:3,rating:0,
+ accepted:false,rstop:0,done:{},pay:{base:6,perStop:3.5,perMile:1.2,servicePct:8,memberDisc:20,runnerShare:80,capPad:15},online:false,offerT:30,passed:0};
+const types={'Groceries':'🛒','Dry cleaning':'👔','Returns':'↩️','Post office':'📮','Pharmacy':'💊','Personal pickup':'🏠','Drop-off':'📦','Custom task':'✨'};
+const money=n=>'$'+n.toFixed(2);const B=BRAND.name;
+function price(){const p=S.pay;const goods=S.stops.reduce((a,s)=>a+s.items.reduce((b,i)=>b+i[1],0),0);
+ const buffer=goods*p.capPad/100;const miles=2+S.stops.length*1.1;let fee=p.base+p.perStop*S.stops.length+p.perMile*miles;
+ if(S.priority==='rush')fee*=1.35;if(S.member)fee*=(1-p.memberDisc/100);const svc=fee*p.servicePct/100;
+ const suggested=Math.ceil((goods+buffer)/5)*5;const cap=S.cap==null?suggested:S.cap;
+ return{goods,buffer,fee,svc,service:fee+svc,miles,cap,suggested,total:fee+svc+cap,refund:Math.max(0,cap-goods),saved:S.stops.length*7.5}}
+function mapSvg(n=3,runner=true,prog=0){const pts=[[60,330],[150,190],[290,280],[330,120],[200,80],[100,90]].slice(0,n+1);const A='var(--accent)';
+ const rp=pts[Math.min(Math.max(prog,1),pts.length-1)]||pts[1];
+ return `<svg viewBox="0 0 400 560" preserveAspectRatio="xMidYMid slice"><rect width="400" height="560" fill="#EEEEEC"/>
+ <g stroke="#fff" stroke-width="10"><path d="M0 140H400M0 300H400M0 450H400M90 0V560M240 0V560M350 0V560"/><path d="M0 40L400 520" stroke-width="14"/></g>
+ <rect x="110" y="320" width="100" height="90" fill="#DDEBD8"/><rect x="260" y="160" width="70" height="60" fill="#DDEBD8"/>
+ <polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" style="stroke:var(--accent)" stroke-opacity=".35" stroke-width="5" stroke-dasharray="10 6"/>
+ <polyline points="${pts.slice(0,Math.max(prog,0)+1).map(p=>p.join(',')).join(' ')}" fill="none" style="stroke:${A}" stroke-width="6"/>
+ ${pts.map((p,i)=>i?`<rect x="${p[0]-9}" y="${p[1]-9}" width="18" height="18" rx="3" style="fill:var(--accent)"/><text x="${p[0]-4}" y="${p[1]+5}" style="fill:var(--on-accent)" font-size="12" font-weight="700">${i}</text>`:`<circle cx="${p[0]}" cy="${p[1]}" r="9" fill="#000"/><circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff"/>`).join('')}
+ ${runner?`<g transform="translate(${rp[0]-14},${rp[1]-40})"><rect width="28" height="16" rx="4" style="fill:${A}" stroke="#fff" stroke-width="3"/><circle cx="14" cy="8" r="3" style="fill:var(--on-accent)"/></g>`:''}</svg>`}
+const nav=(tabs,cur,key)=>`<div class="nav">${tabs.map(t=>`<button class="${t[0]==cur?'on':''}" onclick="S.${key}='${t[0]}';R()">${t[1]}</button>`).join('')}</div>`;
+/* ===== CUSTOMER ===== */
+const CN=[['home','Home'],['track','Activity'],['chat','Chat'],['hist','History'],['plus','Plus']];
+function customer(){const p=price();let inner='';const map=(n,r,pr)=>`<div class="full">${mapSvg(n,r,pr)}</div>`;
+if(S.ct=='home'){inner=`${map(S.stops.length,false)}<div class="sheet"><div class="grab"></div>
+<div class="where" onclick="S.ct='stops';R()"><span class="sq"></span>Where to?</div>
+<div class="muted" style="margin:10px 0 4px">One booking · any mix of stores & people · one upfront price · ${7} runners nearby</div>
+${Object.keys(types).map(t=>`<button class="chip" onclick="addStop('${t}');S.ct='stops';R()">${types[t]} ${t}</button>`).join('')}
+<div class="li" onclick="S.ct='plus';R()" style="cursor:pointer"><div class="ic">🗓</div><div><b>Saturday Run</b><div class="muted">Standing errand · 10am</div></div></div>
+<div class="li" onclick="S.ct='stops';R()" style="cursor:pointer"><div class="ic">🕘</div><div><b>Your current trip · ${S.stops.length} stops</b><div class="muted">${S.stops.map(s=>s.place.split(',')[0]).join(' → ')}</div></div></div></div>`}
+if(S.ct=='stops'){inner=`<div class="page"><button class="chip" onclick="S.ct='home';R()">←</button><h1>Your stops</h1>
+${S.stops.map((s,i)=>`<div class="card"><div class="row"><b>${types[s.type]} ${i+1}. ${s.type}</b><button class="chip" onclick="S.stops.splice(${i},1);R()">✕</button></div>
+<input value="${s.place}" onchange="S.stops[${i}].place=this.value">${s.items.map(it=>`<div class="row muted"><span>• ${it[0]}</span><span>${it[1]?money(it[1]):'—'}</span></div>`).join('')}
+<div class="row"><input id="it${i}" placeholder="Add item / instruction"><button class="chip" onclick="addItem(${i})">+</button></div>
+${s.note?`<div class="muted">📝 ${s.note}</div>`:''}</div>`).join('')}
+<div class="muted">+ Add stop</div>${Object.keys(types).map(t=>`<button class="chip" onclick="addStop('${t}')">${types[t]} ${t}</button>`).join('')}
+<button class="btn" onclick="S.ct='opts';R()">Done</button></div>`}
+if(S.ct=='opts'){const o=[['standard','🚗','Standard','~90 min'],['rush','⚡','Rush','~45 min'],['schedule','🗓','Schedule later','Pick a time']];
+inner=`${map(S.stops.length,false)}<button class="fab" onclick="S.ct='stops';R()">←</button><div class="sheet tall"><div class="grab"></div><h3 style="margin-top:0">Choose a trip</h3>
+${o.map(x=>{const sv=S.priority;S.priority=x[0];const q=price();S.priority=sv;return `<div class="opt ${S.priority==x[0]?'on':''}" onclick="S.priority='${x[0]}';R()"><span style="font-size:26px">${x[1]}</span><div><b>${x[2]}</b><div class="muted">${x[3]} · ${S.stops.length} stops</div></div><span class="p">${money(q.total)}</span></div>`}).join('')}
+<div class="row" style="margin-top:8px"><span><b>Spending cap</b> <span class="muted">for store purchases</span></span><input type="number" id="cap" style="width:100px" value="${p.cap}" onchange="S.cap=+this.value;R()"></div>
+<div class="muted">Suggested ${money(p.suggested)} (items ${money(p.goods)} + ${S.pay.capPad}% price buffer). Unused cap refunded with receipts; anything over needs your OK in chat.</div>
+<div class="muted" style="margin-top:6px">Substitutions: ask me in chat first · Alcohol/Rx: ID verified at handoff</div>
+<div class="row" style="margin-top:8px"><span>💳 Apple Pay ••4242</span><span class="muted">Change</span></div>
+<button class="btn" onclick="S.ct='price';R()">Review price</button></div>`}
+if(S.ct=='price'){inner=`<div class="page"><button class="chip" onclick="S.ct='opts';R()">←</button><h1>${money(p.total)}</h1><div class="muted" style="margin-top:-8px">One upfront price · locked in</div>
+<div class="card" style="margin-top:12px"><div class="row"><span>Service fee · ${S.stops.length} stops · ${p.miles.toFixed(1)} mi ${S.priority=='rush'?'· Rush':''}</span><b>${money(p.fee)}</b></div>
+<div class="row"><span>Platform</span><b>${money(p.svc)}</b></div><div class="row"><b>Locked service fee</b><b>${money(p.service)}</b></div>
+${S.member?`<div><span class="tag a">${BRAND.plus} discount applied</span></div>`:''}<hr style="border:0;border-top:1px solid var(--line)">
+<div class="row"><span>Purchase spending cap</span><b>${money(p.cap)}</b></div>
+<div class="row muted"><span>Store items at shelf price</span><span>${money(p.goods)}</span></div>
+<div class="row muted"><span>Est. refund if unused (with receipts)</span><span>${money(p.refund)}</span></div></div>
+<div class="muted">You'll never pay more than this unless you approve an overage in chat. Tip is optional and 100% goes to your runner.</div>
+<div class="card" style="margin-top:10px;border-color:var(--accent)">⏱ Est. ${S.stops.length*25} min saved vs. separate trips (≈${money(p.saved)} in separate delivery fees)</div>
+<button class="btn a" onclick="S.ct='match';S.trackStep=1;R();setTimeout(()=>{if(S.ct=='match'){S.ct='track';R()}},2500)">Confirm ${S.priority=='rush'?'Rush':'Standard'} · ${money(p.total)}</button>
+<button class="btn o" onclick="S.ct='stops';R()">Edit stops</button></div>`}
+if(S.ct=='match'){inner=`${map(S.stops.length,false)}<div class="sheet"><div class="grab"></div><h3 style="margin-top:0">Matching your runner…</h3><div class="bar"><i style="width:60%"></i></div><div class="pulse"></div>
+<div class="muted" style="text-align:center">Finding a background-checked runner near ${S.stops[0]?.place||'you'}</div><button class="btn o" onclick="S.ct='track';R()">Skip wait (demo)</button><button class="btn o" onclick="S.ct='price';R()">Cancel</button></div>`}
+if(S.ct=='track'){const steps=['Runner assigned','At stop 1','At stop 2','At stop 3','Delivered'];const eta=Math.max(5,60-S.trackStep*15);
+inner=`${map(S.stops.length,true,S.trackStep)}<div class="sheet tall"><div class="grab"></div><div class="row"><h3 style="margin:0">${S.trackStep>=4?'Delivered':steps[Math.min(S.trackStep,4)]}</h3><span class="tag a">${S.trackStep>=4?'Done':eta+' min'}</span></div>
+<div class="li"><div class="ic">👩</div><div style="flex:1"><b>Maya R.</b> ★ 4.97 · Pro Runner <span class="tag">Employee</span><div class="muted">Silver Prius · ETA ${eta} min</div></div><button class="chip" onclick="S.ct='chat';R()">💬</button></div>
+${S.stops.map((s,i)=>{const d=i+1<S.trackStep;return `<div class="stop ${d?'d':''}"><b>${d?'✓':'○'} ${s.place}</b><div class="muted">${d?'Done · 📷 photo proof · receipt '+money(s.items.reduce((a,x)=>a+x[1],0)):s.type}</div></div>`}).join('')}
+${S.trackStep>=4?`<button class="btn a" onclick="S.ct='rate';R()">Rate & tip</button>`:`<button class="btn" onclick="S.trackStep=Math.min(S.trackStep+1,4);R()">▶ Simulate progress</button>`}
+<button class="btn o">📍 Share live tracking link</button></div>`}
+if(S.ct=='rate'){inner=`<div class="page" style="text-align:center"><h1>How was Maya?</h1><div class="muted">${S.stops.length} stops · ${money(p.service)} service · refund ${money(p.refund)} on its way with receipts</div>
+<div class="stars" style="margin:16px 0">${[1,2,3,4,5].map(n=>`<span class="${n<=S.rating?'on':''}" onclick="S.rating=${n};R()">★</span>`).join('')}</div>
+<h3>Add a tip</h3>${[0,3,5,8].map(t=>`<button class="chip ${S.tip==t?'on':''}" onclick="S.tip=${t};R()">$${t}</button>`).join('')}<div class="muted">100% goes to your runner</div>
+<button class="btn" onclick="S.ct='hist';R()">Done</button><button class="btn o">🧾 View receipts</button></div>`}
+if(S.ct=='chat'){inner=`<div class="page"><h1>Maya</h1>${S.chat.map(m=>`<div class="bubble ${m[0]}">${m[1]}</div>`).join('')}
+<div class="card" style="background:var(--warn);border:0">🔄 Maya suggests: Organic milk is out — swap for Horizon 2% ($4.99)? <br><button class="chip" onclick="say('Yes swap is fine')">Approve</button><button class="chip" onclick="say('Skip it please')">Skip</button></div>
+<div class="card" style="border-color:var(--accent)">💵 Over-cap request: approve +$5.00 over your spending cap? <br><button class="chip on" onclick="say('Approved +$5 over cap')">Approve</button><button class="chip" onclick="say('Please stay under cap')">Decline</button></div>
+<div class="row"><input id="msg" placeholder="Message…"><button class="chip" onclick="say($('#msg').value)">Send</button></div></div>`}
+if(S.ct=='hist'){inner=`<div class="page"><h1>History</h1>${[['Oct 19','4 stops · Groceries, CVS, UPS, Mom\'s','$78.40'],['Oct 12','2 stops · Dry cleaning, Post office','$24.10'],['Oct 5','5 stops · Weekly Saturday run','$112.75']].map(h=>`<div class="li"><div class="ic">🧾</div><div style="flex:1"><div class="row"><b>${h[0]}</b><b>${h[2]}</b></div><div class="muted">${h[1]}</div><button class="chip">🔁 Reorder</button><button class="chip">🧾 Receipts</button></div></div>`).join('')}</div>`}
+if(S.ct=='plus'){inner=`<div class="page"><div class="card" style="background:#000;color:#fff"><h3 style="margin-top:0">${BRAND.plus} <span class="tag a" style="font-size:13px">$14.99/mo</span></h3>• ${S.pay.memberDisc}% off every service fee<br>• Free standing weekly run<br>• Priority runners & rush at no extra<br>• Same favorite runner when available</div>
+<button class="btn ${S.member?'o':'a'}" onclick="S.member=!S.member;R()">${S.member?'✓ Member — manage':'Join '+BRAND.plus}</button>
+<h3>Standing errands</h3><div class="card"><div class="row"><b>🗓 Saturday Run · 10am</b><span class="tag a">Active</span></div><div class="muted">Stop & Shop list · Dry cleaner drop/pick · Library returns</div><button class="chip">Edit list</button><button class="chip">Skip this week</button></div>
+<div class="card"><div class="row"><b>💊 Monthly CVS refill</b><span class="tag w">Next: Nov 2</span></div></div><button class="btn o">+ New standing errand</button>
+<div class="card" style="margin-top:10px">🎁 Invite a neighbor, both get $10 off</div></div>`}
+return `<div class="phone">${inner}${nav(CN,S.ct,'ct')}</div>`}
+function addStop(t){S.stops.push({type:t,place:t=='Personal pickup'||t=='Drop-off'?'Enter address':'Choose store near Great Neck',items:[],note:''});R()}
+function addItem(i){const v=$('#it'+i).value;if(!v)return;S.stops[i].items.push([v,+(Math.random()*12+2).toFixed(2)]);R()}
+function say(t){if(!t)return;S.chat.push(['me',t]);S.chat.push(['them','Got it! 👍']);R()}
+/* ===== RUNNER ===== */
+let timer=null;
+function startOffer(){clearInterval(timer);S.offerT=30;timer=setInterval(()=>{if(S.view!='r'||S.rt!='jobs'||S.accepted||!S.online){return}S.offerT--;
+ const el=$('#cd');if(el){el.textContent=S.offerT+'s';$('#cdbar').style.width=(S.offerT/30*100)+'%'}if(S.offerT<=0){S.passed++;S.offerT=30;R()}},1000)}
+function runner(){let inner='';const p=price();
+if(S.rt=='jobs'){if(!S.online){inner=`<div class="full">${mapSvg(0,false)}</div><div class="sheet" style="text-align:center"><div class="grab"></div>
+<button class="go" onclick="S.online=true;startOffer();R()">GO</button><h3>You're offline</h3><div class="muted">🔥 Busy zone: Great Neck Plaza · +$2/job until 7pm</div></div>`}
+else inner=`<div class="full">${mapSvg(S.stops.length,false)}</div><div class="turn" style="justify-content:space-between"><b>🟢 You're online</b><button class="chip" onclick="S.online=false;R()">Go offline</button></div>
+<div class="sheet tall"><div class="grab"></div>${S.accepted?`<div class="card">✓ Job accepted — see Route tab</div>`:`<div class="row"><span class="tag a">Bundled job · ${S.stops.length} stops</span><b id="cd">${S.offerT}s</b></div>
+<div class="bar" style="margin:6px 0"><i id="cdbar" style="width:${S.offerT/30*100}%"></i></div>
+<div class="kpi">${money(p.fee*S.pay.runnerShare/100+8)}</div><div class="muted">Guaranteed pay shown upfront · ${p.miles.toFixed(1)} mi · ~48 min · ≈ $31/hr</div>
+${S.stops.map((s,i)=>`<div class="muted">${i+1}. ${types[s.type]} ${s.place}</div>`).join('')}
+<div class="muted">💳 ${B} card pre-loaded for purchases — no out-of-pocket</div>
+<button class="btn a" onclick="S.accepted=true;S.rt='route';R()">Accept</button><button class="btn o" onclick="S.passed++;startOffer();R()">Pass (no penalty)</button>${S.passed?`<div class="muted">Passed ${S.passed} · no penalty</div>`:''}`}
+<div class="card" style="margin-top:8px"><b>Next in queue</b><div class="muted">2 stops · Dry cleaner → Kings Point · $13.60 · stacks onto your route (+0.8 mi)</div></div>
+<div class="card">🔥 Busy zone: Great Neck Plaza · +$2/job until 7pm</div></div>`}
+if(S.rt=='route'){const s=S.stops[S.rstop]||S.stops[0];
+inner=`<div class="full">${mapSvg(S.stops.length,true,S.rstop+1)}</div><div class="turn"><span class="ar">↱</span><div><b style="font-size:20px">0.4 mi · Turn right</b><div style="opacity:.8">onto Middle Neck Rd → ${s.place}</div></div></div>
+<div class="sheet tall"><div class="grab"></div><div class="muted">Optimized route · reordered to save 1.9 mi · <a href="#">Open in Google Maps</a></div>
+<h3>Stop ${S.rstop+1}/${S.stops.length}: ${types[s.type]} ${s.place}</h3>${s.note?`<div class="muted">📝 ${s.note}</div>`:''}
+${s.items.map((it,j)=>{const k=S.rstop+'-'+j;return `<label class="chk"><input type="checkbox" ${S.done[k]?'checked':''} onchange="S.done['${k}']=this.checked">${it[0]} ${it[1]?'<span class="muted">'+money(it[1])+'</span>':''}</label>`}).join('')}
+<button class="chip">📷 Photo proof</button><button class="chip">🧾 Scan receipt</button><button class="chip">🔄 Suggest swap</button><button class="chip">💬 Customer</button>
+<button class="btn a" onclick="S.rstop=(S.rstop+1)%S.stops.length;S.trackStep=Math.min(S.trackStep+1,4);R()">${S.rstop==S.stops.length-1?'Complete job':'Done → next stop'}</button>
+<button class="btn o">🆘 Safety / support</button></div>`}
+if(S.rt=='earn'){inner=`<div class="page"><div class="muted">This week</div><h1 style="font-size:40px">$612.40</h1><div class="muted">22.5 hrs · $27.22/hr avg · 100% of tips kept</div>
+<div class="grid" style="margin-top:10px"><div class="card"><div class="muted">Today</div><b>$148.20</b></div><div class="card"><div class="muted">Tips</div><b>$96.00</b></div></div>
+<button class="btn a">⚡ Instant cash-out (free)</button><h3>Pay breakdown, last job</h3><div class="row muted"><span>Base + per stop</span><span>$16.50</span></div><div class="row muted"><span>Mileage</span><span>$6.30</span></div><div class="row muted"><span>Zone boost</span><span>$2.00</span></div><div class="row muted"><span>Tip</span><span>$5.00</span></div>
+<h3>Weekly goal</h3><div class="muted">Complete 40 stops → +$50 bonus (31/40)</div><div class="bar"><i style="width:77%"></i></div></div>`}
+if(S.rt=='perks'){inner=`<div class="page"><h1>Your benefits</h1>${[['⛽','Gas cashback 10¢/gal'],['🩺','Health stipend after 20 hrs/wk'],['🛡','Accident insurance on every trip'],['📅','Pick your own schedule & zones'],['🏆','Pro Runner tier: priority on high-pay bundles'],['🎓','Tuition help for 6-month runners'],['🚫','No penalty for declining jobs'],['💳','Company card — never front your own money']].map(x=>`<div class="li"><div class="ic">${x[0]}</div><b>${x[1]}</b></div>`).join('')}
+<h3>Profile</h3><div class="muted">Maya R. · ★4.97 · 1,284 stops · Employee (W-2) · Pro tier</div></div>`}
+return `<div class="phone">${inner}${nav([['jobs','Home'],['route','Route'],['earn','Earnings'],['perks','Perks']],S.rt,'rt')}</div>`}
+/* ===== OWNER ===== */
+function admin(){const tabs=[['live','Live map'],['jobs','Active jobs'],['runners','Runners'],['rev','Revenue'],['price','Pricing'],['support','Support'],['comp','Competitor strengths used']];let b='';
+if(S.at=='live'){b=`<div class="grid"><div class="card"><div class="muted">Active jobs</div><div class="kpi">14</div></div><div class="card"><div class="muted">Runners online</div><div class="kpi">9</div></div><div class="card"><div class="muted">Avg stops / trip</div><div class="kpi">3.4</div></div><div class="card"><div class="muted">On-time</div><div class="kpi">96%</div></div></div>
+<div class="card"><b>Great Neck — live</b><div style="height:360px;border-radius:10px;overflow:hidden;margin-top:8px">${mapSvg(4,true,2)}</div><div class="muted">Heat: Great Neck Plaza (high), Kensington (med), Kings Point (low)</div></div>`}
+if(S.at=='jobs'){b=`<div class="card"><table><tr><th>ID</th><th>Customer</th><th>Stops</th><th>Runner</th><th>Status</th><th>Price</th></tr>
+${[['#1042','Jeremy L.','3','Maya R.','At stop '+Math.min(S.trackStep,3),money(price().total)],['#1041','Dana K.','5','Luis M.','Shopping','$96.20'],['#1040','R. Cohen','2','Unassigned','⚠ Waiting 6m','$22.40'],['#1039','Ari S.','4','Tom B.','Delivering','$71.15']].map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table><button class="btn sm">Auto-assign unassigned</button></div>`}
+if(S.at=='runners'){b=`<div class="card"><table><tr><th>Runner</th><th>Type</th><th>Status</th><th>Rating</th><th>Week $</th><th>Background check</th></tr>
+${[['Maya R.','Employee','On job','4.97','$612'],['Luis M.','Gig','On job','4.91','$488'],['Tom B.','Gig','On job','4.88','$402'],['Priya N.','Employee','Online','4.99','$590'],['Sam W.','Gig','Offline','4.76','$210']].map(r=>`<tr>${r.map((c,i)=>`<td>${i==1?`<span class="tag ${c=='Gig'?'w':'a'}">${c}</span>`:c}</td>`).join('')}<td>✓</td></tr>`).join('')}</table><button class="btn sm">+ Onboard runner</button></div>`}
+if(S.at=='rev'){const d=[820,940,760,1120,1380,1910,1650];b=`<div class="grid"><div class="card"><div class="muted">GMV (7d)</div><div class="kpi">$8,580</div></div><div class="card"><div class="muted">Net revenue</div><div class="kpi">$1,716</div></div><div class="card"><div class="muted">Paid to runners</div><div class="kpi">$4,950</div></div><div class="card"><div class="muted">${BRAND.plus} members</div><div class="kpi">38</div></div></div>
+<div class="card"><b>Daily GMV</b><svg viewBox="0 0 350 120" style="width:100%">${d.map((v,i)=>`<rect x="${i*50+10}" y="${110-v/20}" width="30" height="${v/20}" style="fill:var(--accent)" rx="2"/><text x="${i*50+12}" y="118" font-size="9">${'MTWTFSS'[i]}</text>`).join('')}</svg></div>`}
+if(S.at=='price'){const p=S.pay;b=`<div class="card"><b>Pricing engine</b> <span class="muted">(changes update the customer quote live)</span>
+${[['base','Base trip fee $'],['perStop','Per stop $'],['perMile','Per mile $'],['servicePct','Platform % of service fee'],['memberDisc','Member discount %'],['runnerShare','Runner share of trip fee %'],['capPad','Suggested cap buffer over items %']].map(k=>`<div class="row"><span>${k[1]}</span><input type="number" step="0.5" style="width:120px" value="${p[k[0]]}" onchange="S.pay.${k[0]}=+this.value;R()"></div>`).join('')}
+<hr><div class="row"><b>Sample quote (current customer cart)</b><b>${money(price().total)}</b></div><div class="muted">Locked service fee ${money(price().service)} + spending cap ${money(price().cap)} · Runner gets ${money(price().fee*p.runnerShare/100)} + tips</div></div>`}
+if(S.at=='support'){b=`${[['🔴','#1040 waiting for runner 6m','Reassign'],['🟡','Dana K.: item out of stock, runner asking','Join chat'],['🟢','Refund request $4.10 unused spending cap','Approve']].map(t=>`<div class="card row"><span>${t[0]} ${t[1]}</span><button class="chip">${t[2]}</button></div>`).join('')}`}
+if(S.at=='comp'){b=`<div class="card"><table><tr><th>Competitor</th><th>Strength</th><th>How ${B} uses it</th></tr>
+${[['Uber','One-tap booking, upfront fare, live car tracking, ratings, shareable trip','Upfront locked price, live map, runner ratings, share tracking link'],['DoorDash','DashPass subscription, huge merchant reach, Dasher flexibility & fast pay',BRAND.plus+' membership, any-store stops, flexible schedule + free instant cash-out'],['Instacart','Item-level lists, live substitution chat, in-store shopper','Per-stop item lists, swap approval in chat, store-price transparency'],['Shipt','Same favorite shopper, membership, personal service feel','Favorite runner, standing weekly errands, employee "Pro Runners"'],['TaskRabbit','Open-ended tasks, vetted/background-checked taskers','Custom/personal stops (grandma → sister), background checks'],['Postmates','"Anything from anywhere" courier model, point-to-point','Personal pickup & drop-off stops of any item']].map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table></div>
+<div class="card"><b>${B} edge</b><div class="muted">Multi-stop bundling in ONE trip & ONE price (none of the above do mixed store + personal stops together), company purchase card for runners, no-penalty declines, benefits for gig + W-2 runners.</div></div>`}
+return `<div class="wide"><h1>${B} Owner</h1><div>${tabs.map(t=>`<button class="chip ${S.at==t[0]?'on':''}" onclick="S.at='${t[0]}';R()">${t[1]}</button>`).join('')}</div><div style="margin-top:12px">${b}</div></div>`}
+function R(){$('#app').innerHTML=S.view=='c'?customer():S.view=='r'?runner():admin();document.querySelectorAll('.top button[data-v]').forEach(x=>x.classList.toggle('on',x.dataset.v==S.view))}
+document.querySelectorAll('.top button[data-v]').forEach(x=>x.onclick=()=>{S.view=x.dataset.v;R()});function setAccent(id){const a=ACCENTS.find(x=>x.id==id)||ACCENTS[0];BRAND.accent=a.hex;document.documentElement.style.setProperty('--accent',a.hex);
+ $('#swName').textContent=a.name;document.querySelectorAll('.sw button').forEach(b=>b.classList.toggle('cur',b.dataset.c==a.id))}
+$('#sw').insertAdjacentHTML('beforeend',ACCENTS.map(a=>`<button data-c="${a.id}" title="${a.name} ${a.hex}" aria-label="${a.name}" style="background:${a.hex}" onclick="setAccent('${a.id}')"></button>`).join(''));
+setAccent('violet');R();
+$('#mm').onclick=()=>document.body.classList.toggle('mopen');document.querySelector('.top').addEventListener('click',e=>{if(e.target.dataset.v)document.body.classList.remove('mopen')});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js',{scope:'./'});
+</script></body></html>
