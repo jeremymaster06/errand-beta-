@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://maps.googleapis.com; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.gstatic.com data: blob:; worker-src 'self' blob:; frame-src https://*.google.com; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ErrandCo — one trip, every errand</title>
 <meta name="description" content="Multi-stop errands with one upfront, route-optimized price.">
@@ -40,7 +42,10 @@
 <script src="js/icons.js"></script>
 <script src="js/solver.js"></script>
 <script src="js/maps.js"></script>
+<script src="js/places.js"></script>
+<script src="js/catalog.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
+<script src="js/addstop.js"></script>
 </body>
 </html>

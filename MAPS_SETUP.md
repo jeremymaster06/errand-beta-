@@ -1,27 +1,25 @@
 # Google Maps setup
 
-The app works without a key and uses a built-in vector map (`js/maps.js`, fallback mode).
-To turn on live Google Maps, put a browser key in **one place**: `js/config.js` → `const MAPS_API_KEY = '...'`.
-(Optional: `MAPS_MAP_ID` for cloud-styled maps.)
+Put a browser key in `js/config.js` as `MAPS_API_KEY`. With no key the app runs fully offline, using a built-in map and local place search.
 
-## APIs to enable (Google Cloud Console → APIs & Services → Library)
-| API | Used for | Required? |
-|---|---|---|
-| **Maps JavaScript API** | the live map, markers, polyline, animated runner arrow | Yes |
-| **Directions API** (legacy, via `DirectionsService`) — or **Routes API** if you migrate | road-following route polyline between stops in the optimized order | Yes |
-| **Places API** (Places library / Autocomplete) | address autocomplete for "Other address…" stops | Recommended |
-| **Geocoding API** | turning typed addresses into lat/lng | Recommended |
-| Distance Matrix API | *Not used.* Stop ordering is solved client-side (Held-Karp exact ≤ 12 stops, heuristic beyond) on haversine × 1.35 road factor. Enable only if you later swap in real drive times. | No |
+## APIs to enable (Cloud Console → APIs & Services → Library)
+| API | Used for |
+|---|---|
+| Maps JavaScript API | the live map, loaded lazily the first time a map is shown |
+| Places API (New) | `AutocompleteSuggestion` + `Place.fetchFields` (session-token billed) |
+| Routes API | `Route.computeRoutes`, called only once stops are final (route review onward), cached per stop set |
+| Geocoding API | turning a typed free-text address into a location |
+| Directions API (Legacy, optional) | fallback only; new projects can't enable it, and the app works without it |
 
-## Restrict the key (important: it is visible in page source)
-Credentials → your key →
-- **Application restrictions → Websites (HTTP referrers):**
-  - `https://<your-github-username>.github.io/*`
-  - (optional for local testing) `http://localhost:*/*`
-- **API restrictions → Restrict key** to only the APIs above.
+## Restrict the key (it is visible in the page source)
+1. Credentials → your key → **Application restrictions → Websites (HTTP referrers)**: add `https://<user>.github.io/<repo>/*` (and `http://localhost:8765/*` for development only; remove it before launch).
+2. **API restrictions → Restrict key**: tick only the APIs in the table above.
+3. Never reuse this key server-side. Server calls need a separate, IP-restricted key.
 
-## Billing
-Google Maps Platform requires a billing account on the project, even for usage inside the free monthly credit / free tiers. Set a **budget alert** and per-API **quota caps** (APIs & Services → Quotas) so a leaked or abused key can't run up charges. Dynamic map loads and Directions requests are billed per request beyond the free usage.
+## Quotas and billing alerts
+- APIs & Services → each API → **Quotas**: cap requests per day and per minute per user (for example, Autocomplete at 5,000/day to start), so a leaked key can't run up a bill.
+- Billing → **Budgets & alerts**: create a monthly budget with email alerts at 50%, 90% and 100%.
+- Cost controls in code: 3-char minimum, 300 ms debounce, stale-request dropping, session tokens (autocomplete plus one details fetch billed as a session), field mask `displayName, formattedAddress, location, types`, memory + sessionStorage caching, lazy script loading, and no routing while stops are still being edited.
 
 ## Failure behaviour
-If the key is missing, invalid, referrer-blocked, or the script fails to load, `gm_authFailure` / `onerror` switch the app back to the fallback map automatically. No errors are shown to users.
+On a bad or restricted key, `gm_authFailure` switches the map to the built-in SVG and place search to the local dataset, with no errors shown to the customer.

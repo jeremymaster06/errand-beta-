@@ -26,14 +26,15 @@ const PLACES = {
   kingspt: { name: 'Mrs. Alvarez', addr: '4 Kings Point Rd', lat: 40.8090, lng: -73.7400, type: 'Personal' }
 };
 const TYPES = {
-  'Groceries': { ic: 'cart', store: true, dwell: 14, place: 'stopshop' },
-  'Dry cleaning': { ic: 'hanger', store: true, dwell: 5, place: 'cleaners' },
-  'Returns': { ic: 'ret', store: true, dwell: 6, place: 'ups' },
-  'Post office': { ic: 'envelope', store: true, dwell: 8, place: 'usps' },
-  'Pharmacy': { ic: 'pill', store: true, dwell: 10, place: 'cvs', pro: 'Prescription pickup needs an ID check' },
-  'Personal pickup': { ic: 'pickup', dwell: 4, place: 'dana' },
-  'Drop-off': { ic: 'box', dwell: 4, place: 'office' },
-  'Custom task': { ic: 'sparkles', dwell: 10, place: 'office' }
+  'Groceries': { ic: 'cart', store: true, dwell: 14 },
+  'Dry cleaning': { ic: 'hanger', store: true, dwell: 5 },
+  'Returns': { ic: 'ret', store: true, dwell: 6 },
+  'Post office': { ic: 'envelope', store: true, dwell: 8 },
+  'Pharmacy': { ic: 'pill', store: true, dwell: 10, pro: 'Prescription pickup needs an ID check' },
+  'Shopping': { ic: 'bag', store: true, dwell: 10 },
+  'Personal pickup': { ic: 'pickup', dwell: 4 },
+  'Drop-off': { ic: 'box', dwell: 4 },
+  'Custom task': { ic: 'sparkles', dwell: 10 }
 };
 const HIGH_VALUE = 150;
 
@@ -60,7 +61,6 @@ const BUNDLES = [
   { id: 'ship', name: 'Holiday shipping', desc: 'Post office + UPS returns in one trip', places: ['usps', 'ups'], types: ['Post office', 'Returns'], off: 3, ends: '2026-12-15T17:00:00-05:00' },
   { id: 'summer', name: 'Summer beach run', desc: 'Expired example (hidden)', places: ['stopshop', 'library'], types: ['Groceries', 'Returns'], off: 4, ends: '2026-09-07T23:59:00-04:00' }
 ];
-const FREQ = { 'Groceries': ['Pharmacy', 'Dry cleaning'], 'Dry cleaning': ['Post office', 'Returns'], 'Personal pickup': ['Groceries'], 'Drop-off': ['Post office'], 'Returns': ['Post office'], 'Pharmacy': ['Groceries'], 'Post office': ['Returns'], 'Custom task': ['Groceries'] };
 const HISTORY = [
   { date: 'Oct 19', title: '4 stops · Groceries, CVS, UPS, Mom', total: 78.40, runner: 'maya', saved: 2.10 },
   { date: 'Oct 12', title: '2 stops · Dry cleaning, Post office', total: 24.10, runner: 'luis', saved: 0.00 },
@@ -68,7 +68,7 @@ const HISTORY = [
 ];
 
 let _sid = 100;
-function mkStop(type, pid, extra = {}) { return Object.assign({ id: 's' + (++_sid), type, pid: pid || TYPES[type].place, items: [], note: '', from: null, white: false }, extra); }
+function mkStop(type, pid, extra = {}) { return Object.assign({ id: 's' + (++_sid), type, pid: pid || null, items: [], note: '', from: null, white: false }, extra); }
 
 const S = {
   view: 'c', accent: 'violet', det: {}, open: null,
@@ -98,10 +98,13 @@ function placeOf(s) { return s.custom || PLACES[s.pid] || HOME; }
 function bundleActive(b, now = new Date()) { return new Date(b.ends) > now; }
 function activeBundle(stops) { return BUNDLES.filter(b => bundleActive(b)).find(b => b.places.every(p => stops.some(s => s.pid === p))) || null; }
 
+/* Pharmacy stops need Pro only when they include a prescription (OTC-only baskets don't). */
+function hasRx(s) { return s.type === 'Pharmacy' && (s.rx || s.items.some(i => i.rx || /\(Rx\)/.test(i.n))); }
+function typePro(s) { const T = TYPES[s.type]; return T.pro && (s.type !== 'Pharmacy' || hasRx(s)) ? T.pro : ''; }
 function needsPro(stops) {
   const why = [];
   stops.forEach(s => { const pl = placeOf(s);
-    if (TYPES[s.type].pro) why.push(TYPES[s.type].pro + ' (' + pl.name + ')');
+    if (typePro(s)) why.push(typePro(s) + ' (' + pl.name + ')');
     if (s.items.some(i => i.p >= HIGH_VALUE)) why.push('High-value item over $' + HIGH_VALUE + ' (' + pl.name + ')');
     if (s.white) why.push('White-glove handling (' + pl.name + ')'); });
   return why;
@@ -157,11 +160,6 @@ function routeSuggestions() {
   return Object.entries(PLACES).filter(([k, p]) => p.type !== 'Personal' && !have.has(k) && !S.dismissed['p_' + k])
     .map(([k, p]) => { const type = p.type === 'Drop-off' ? 'Drop-off' : p.type; const m = marginal([mkStop(type, k)]); return { k, p, type, m }; })
     .sort((a, b) => a.m.usd - b.m.usd).slice(0, 3);
-}
-function freqSuggestions() {
-  const types = new Set(S.stops.map(s => s.type)), out = [];
-  S.stops.forEach(s => (FREQ[s.type] || []).forEach(t => { if (!types.has(t) && !out.some(o => o.t === t) && !S.dismissed['f_' + t]) out.push({ t, with: s.type }); }));
-  return out.slice(0, 3);
 }
 /* Who would get the trip: requested favorite if available and qualified; else best available qualified runner. */
 function matchRunner(tier, fav) {

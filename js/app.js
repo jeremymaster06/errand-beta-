@@ -42,7 +42,7 @@ function sceneFor(stops, opts = {}) {
     const tot = legs.reduce((a, b) => a + b, 0) || 1; let acc = 0; for (let i = 0; i < Math.min(opts.progress, legs.length); i++) acc += legs[i];
     runnerT = acc / tot;
   }
-  return { pts, path, runner: runnerT, start };
+  return { pts, path, runner: runnerT, start, final: !!opts.final };
 }
 function homeScene() {
   const cars = RUNNERS.filter(r => r.status !== 'offline').map((r, i) => ({ lat: HOME.lat + Math.sin(i * 2.1) * .006, lng: HOME.lng + Math.cos(i * 2.1) * .008, kind: 'car' }));
@@ -53,15 +53,12 @@ function homeScene() {
 const C = {
   go(screen) { S.c.screen = screen; haptic(); R(); },
   tab(t) { S.c.tab = t; S.c.screen = t; R(); },
-  addType(t) { const s = mkStop(t); S.stops.push(s); S.open = s.id; S.c.screen = 'stops'; haptic(); R(); toast('Added ' + placeOf(s).name); },
-  addPlace(k, t) { S.stops.push(mkStop(t, k)); haptic(); R(); toast('Added ' + PLACES[k].name + ' to your route'); },
+  addPlace(k, t) { const L = Places.LOCAL.find(x => x.id === k); if (L && Places.STORE_KINDS.includes(L.kind)) { Places.resolve({ src: 'local', place: L, kind: L.kind }).then(pl => ST.open(pl)); return; } S.stops.push(mkStop(t, k)); haptic(); R(); toast('Added ' + PLACES[k].name + ' to your route'); },
   addFavList(id) { const L = FAV_LISTS.find(x => x.id === id); L.stops.forEach(x => { if (!S.stops.some(s => s.pid === x.pid)) S.stops.push(mkStop(x.type, x.pid, { items: x.items.map(i => ({ ...i })) })); }); S.c.screen = 'stops'; R(); toast(L.name + ' added'); },
   addBundle(id) { const b = BUNDLES.find(x => x.id === id); b.places.forEach((p, i) => { if (!S.stops.some(s => s.pid === p)) S.stops.push(mkStop(b.types[i], p)); }); S.c.screen = 'stops'; R(); toast(b.name + ': $' + b.off + ' off applied'); },
   dismiss(k) { S.dismissed[k] = 1; R(); },
   remove(id) { S.stops = S.stops.filter(s => s.id !== id); S.stops.forEach(s => { if (s.from === id) s.from = null; }); if (S.open === id) S.open = null; R(); },
   toggle(id) { S.open = S.open === id ? null : id; R(); },
-  setPlace(id, v) { const s = S.stops.find(x => x.id === id); if (v === '__custom') { s.custom = { name: 'Other address', addr: '', lat: HOME.lat + .004, lng: HOME.lng - .003 }; s.pid = null; } else { s.pid = v; s.custom = null; } R(); },
-  setCustom(id, v) { const s = S.stops.find(x => x.id === id); let h = 0; for (const c of v) h = (h * 31 + c.charCodeAt(0)) % 1000; s.custom = { name: v || 'Other address', addr: v, lat: HOME.lat + (h % 20 - 10) / 1000, lng: HOME.lng + ((h / 20 | 0) % 20 - 10) / 1000 }; R(); },
   addItem(id) { const s = S.stops.find(x => x.id === id), n = $('#in_' + id).value.trim(), pe = $('#ip_' + id), p = pe ? parseFloat(pe.value) || 0 : 0; if (!n) return; s.items.push({ n, p }); R(); },
   rmItem(id, j) { S.stops.find(x => x.id === id).items.splice(j, 1); R(); },
   note(id, v) { S.stops.find(x => x.id === id).note = v; },
@@ -93,7 +90,6 @@ const C = {
 };
 
 /* ================= CUSTOMER screens ================= */
-const addTiles = () => `<div class="tiles">${Object.keys(TYPES).map(t => `<button class="tile" onclick="C.addType('${t}')">${icon(TYPES[t].ic)}<span>${t === 'Personal pickup' ? 'Pickup' : t}</span></button>`).join('')}</div>`;
 function customer() {
   const sc = S.c.screen; const q = quote(); let html = '', scene = null, tab = false, map = true;
   if (sc === 'home') {
@@ -101,17 +97,17 @@ function customer() {
     const live = S.trip;
     const bundles = BUNDLES.filter(b => bundleActive(b) && !S.dismissed['b_' + b.id]);
     html = `<button class="fbtn tl" aria-label="Account" onclick="C.tab('account')">${icon('person')}</button>` + sheet({ id: 'home', detents: ['peek', 'medium', 'large'], def: 'medium', tabbar: true,
-      head: `<div class="t2" style="margin:0 0 12px">Hi, Jeremy</div><button class="where" onclick="C.go('stops')">${icon('pin')}<span>Where to?</span><span class="sch" role="button" aria-label="Schedule" onclick="event.stopPropagation();S.speed=S.speed==='schedule'?'now':'schedule';R()">${icon('clock', 's')}${S.speed === 'schedule' ? 'Later' : 'Now'}</span></button>`,
+      head: `<div class="t2" style="margin:0 0 12px">Hi, Jeremy</div><button class="where" onclick="AS.open()">${icon('pin')}<span>Where to?</span><span class="sch" role="button" aria-label="Schedule" onclick="event.stopPropagation();S.speed=S.speed==='schedule'?'now':'schedule';R()">${icon('clock', 's')}${S.speed === 'schedule' ? 'Later' : 'Now'}</span></button>`,
       body: `${live ? `<div class="group" style="margin-top:12px">${cell({ ic: 'route', title: S.trip.status === 'done' ? 'Trip delivered' : 'Trip in progress', sub: runner(S.trip.runner).name + ' · ' + (S.trip.status === 'matching' ? 'matching…' : S.trip.status === 'done' ? 'rate & tip' : 'stop ' + Math.min(S.trip.step + 1, S.trip.stops.length) + ' of ' + S.trip.stops.length), chev: 1, tap: "C.go('" + (S.trip.status === 'matching' ? 'matching' : S.trip.status === 'done' ? 'rate' : 'tracking') + "')" })}</div>` : ''}
-      <div class="group-h">Add a stop</div>${addTiles()}
       <div class="group-h">Your trip</div><div class="group">${cell({ ic: 'list', title: S.stops.length + ' stops · one upfront price', sub: S.stops.map(s => esc(placeOf(s).name)).join(' → ') || 'No stops yet', chev: 1, tap: "C.go('stops')" })}</div>
       <div class="group-h">Reorder favorites</div><div class="group">${FAV_LISTS.map(L => cell({ ic: L.id === 'sat' ? 'calendar' : 'pill', icc: 'orange', title: L.name, sub: L.stops.length + ' stop' + (L.stops.length > 1 ? 's' : '') + ' · ' + L.when, acc: `<button class="btn sm gray" onclick="event.stopPropagation();C.addFavList('${L.id}')">Add</button>` })).join('')}</div>
       ${bundles.length ? `<div class="group-h">Limited-time bundles</div><div class="hscroll">${bundles.map(b => `<div class="hcard"><div style="display:flex;justify-content:space-between;align-items:start"><span class="badge acc">$${b.off} off</span><button class="iconbtn" style="width:26px;height:26px" aria-label="Dismiss ${b.name}" onclick="C.dismiss('b_${b.id}')">${icon('x', 's')}</button></div><div class="hl">${b.name}</div><div class="fn">${b.desc}</div><div class="cap">Ends ${fmtEnd(b.ends)}</div><button class="btn sm" style="margin-top:4px" onclick="C.addBundle('${b.id}')">Add both</button></div>`).join('')}</div>` : ''}
       <div class="group-h">Recent</div><div class="group">${['grandma', 'cvs', 'cleaners'].map(k => cell({ ic: 'clock', icc: 'gray', title: PLACES[k].name, sub: PLACES[k].addr })).join('')}</div>` });
   }
+  if (sc === 'add' || sc === 'place' || sc === 'store') { map = false; html = addScreens(sc); }
   if (sc === 'stops') {
     scene = sceneFor(S.stops);
-    const pro = needsPro(S.stops), fe = S.pay.freeEvery, n = S.stops.length, rem = n % fe, toFree = fe - rem, sugg = n ? routeSuggestions() : [], freq = freqSuggestions();
+    const pro = needsPro(S.stops), fe = S.pay.freeEvery, n = S.stops.length, rem = n % fe, toFree = fe - rem, sugg = n ? routeSuggestions() : [];
     const ab = activeBundle(S.stops);
     const bundles = BUNDLES.filter(b => bundleActive(b) && !S.dismissed['b_' + b.id] && b !== ab);
     html = `<button class="fbtn tl" aria-label="Back" onclick="C.go('home')">${icon('chevL')}</button>` + sheet({ id: 'stops', detents: ['medium', 'large'], def: 'large', solid: true,
@@ -120,9 +116,8 @@ function customer() {
         <div class="bar" style="margin-top:8px"><i style="width:${(rem === 0 && n ? 1 : rem / fe) * 100}%"></i></div><div class="cap" style="margin-top:6px">Every ${fe}th stop’s ${money(S.pay.perStop)} stop fee is on us. No minimums, nothing pre-added.</div></div>
       ${pro.length ? `<div class="group-f" style="margin:12px 4px 0">${tierBadge('pro')} Needs a Pro runner: ${pro.map(esc).join('; ')}.</div>` : ''}
       <div class="group-h">Stops · in the order you added them</div><div class="group">${S.stops.map(stopCell).join('') || cell({ title: '<span class="sec">No stops yet — add one below</span>' })}${cell({ ic: 'house', icc: 'gray', title: 'Home', sub: 'Purchases delivered to you at the end' })}</div>
-      <div class="group-h">Add a stop</div>${addTiles()}
-      ${sugg.length ? `<div class="group-h">On your route</div>${sugg.map(x => `<div class="ups"><div style="width:36px;height:36px;border-radius:10px;background:var(--fill);color:var(--tint);display:grid;place-items:center;flex:none">${icon(TYPES[x.type].ic)}</div><div style="flex:1;min-width:0"><div class="hl ellip">${x.p.name}</div><div class="fn">Add a stop on your route for <b class="tint">+${money(x.m.usd)}</b> · +${Math.max(1, Math.round(x.m.min))} min</div></div><button class="btn sm" onclick="C.addPlace('${x.k}','${x.type}')">Add</button><button class="x" aria-label="Not now" onclick="C.dismiss('p_${x.k}')">${icon('x')}</button></div>`).join('')}<div class="group-f">The price is the exact change to your service fee. Store items are extra, at shelf price.</div>` : ''}
-      ${freq.length ? `<div class="group-h">Frequently bundled</div><div class="chips" style="flex-wrap:wrap">${freq.map(x => `<button class="chip" onclick="C.addType('${x.t}')">${icon(TYPES[x.t].ic, 's')}${x.t} <span class="sec num">+${money(marginal([mkStop(x.t)]).usd)}</span></button>`).join('')}</div><div class="group-f">Errands Great Neck customers often add alongside ${esc(freq[0].with.toLowerCase())}.</div>` : ''}
+      <button class="where addsearch" style="margin-top:12px" onclick="AS.open()">${icon('search')}<span>Add a stop: search a store or address</span></button>
+      ${sugg.length ? `<div class="group-h">On your route</div>${sugg.map(x => `<div class="ups"><div style="width:36px;height:36px;border-radius:10px;background:var(--fill);color:var(--tint);display:grid;place-items:center;flex:none">${icon(TYPES[x.type].ic)}</div><div style="flex:1;min-width:0"><div class="hl ellip">${x.p.name}</div><div class="fn">Add a stop on your route for <b class="tint">+${money(x.m.usd)}</b> · +${Math.max(1, Math.round(x.m.min))} min</div></div><button class="btn sm" onclick="C.addPlace('${x.k}','${x.type}')">${TYPES[x.type].store && Places.LOCAL.some(l => l.id === x.k && Places.STORE_KINDS.includes(l.kind)) ? 'Shop' : 'Add'}</button><button class="x" aria-label="Not now" onclick="C.dismiss('p_${x.k}')">${icon('x')}</button></div>`).join('')}<div class="group-f">The price is the exact change to your service fee. Store items are extra, at shelf price; you pick them next.</div>` : ''}
       ${ab ? `<div class="group-h">Bundle applied</div><div class="ups"><span class="badge acc">−$${ab.off}</span><div style="flex:1"><div class="hl">${ab.name}</div><div class="cap">Ends ${fmtEnd(ab.ends)}</div></div></div>` : ''}
       ${bundles.length ? `<div class="group-h">Limited-time bundles</div>${bundles.map(b => `<div class="ups"><span class="badge acc">$${b.off} off</span><div style="flex:1;min-width:0"><div class="hl">${b.name}</div><div class="fn">${b.desc}</div><div class="cap">Ends ${fmtEnd(b.ends)}</div></div><button class="btn sm gray" onclick="C.addBundle('${b.id}')">Add</button><button class="x" aria-label="Dismiss ${b.name}" onclick="C.dismiss('b_${b.id}')">${icon('x')}</button></div>`).join('')}` : ''}
       ${n ? `<div class="group-h">One trip vs. separate orders</div><div class="group">${cell({ ic: 'clock', icc: 'green', title: '~' + fmtMin(q.separate.min) + ' of your time saved', sub: 'vs. doing ' + n + ' errand' + (n > 1 ? 's' : '') + ' yourself (est. 22 min each)' })}${cell({ ic: 'dollar', icc: 'green', title: money(q.f.service) + ' for all ' + n + ' stops', sub: 'vs. ~' + money(q.separate.usd) + ' in separate delivery fees (est. $7.99 each)' })}</div><div class="group-f">Estimates for comparison only. Your price is fixed before you confirm.</div>` : ''}`,
@@ -130,7 +125,7 @@ function customer() {
   }
   if (sc === 'route') {
     const r = q.route, ent = S.c.routeView === 'entered';
-    scene = sceneFor(S.stops, { entered: ent }); scene.top = 235; scene.bottom = 400;
+    scene = sceneFor(S.stops, { entered: ent, final: true }); scene.top = 235; scene.bottom = 400;
     html = `<button class="fbtn tl" aria-label="Back" onclick="C.go('stops')">${icon('chevL')}</button>
     <div class="banner enter"><div class="badge-ic">${icon('route')}</div><div>${q.save.usd >= .01 ? `<b>We optimized your route</b><br><span class="sec">You save ${money(q.save.usd)} · ${Math.max(1, Math.round(q.save.min))} min vs. the order you entered</span>` : `<b>Your order is already the fastest</b><br><span class="sec">We checked every possible order</span>`}</div></div>` +
       sheet({ id: 'route', detents: ['medium', 'large'], def: 'medium',
@@ -140,7 +135,7 @@ function customer() {
         foot: `<button class="btn" onclick="C.go('options')">Choose options</button>` });
   }
   if (sc === 'options') {
-    scene = sceneFor(S.stops); const pro = needsPro(S.stops); if (pro.length && S.tier !== 'pro') S.tier = 'pro';
+    scene = sceneFor(S.stops, { final: true }); const pro = needsPro(S.stops); if (pro.length && S.tier !== 'pro') S.tier = 'pro';
     const qs = quote({ stops: S.stops, tier: 'standard' }), qp = quote({ stops: S.stops, tier: 'pro' }), cq = quote();
     const m = matchRunner(S.tier, S.requestFav), favs = S.favs.map(runner);
     html = `<button class="fbtn tl" aria-label="Back" onclick="C.go('route')">${icon('chevL')}</button>` + sheet({ id: 'options', detents: ['medium', 'large'], def: 'large', solid: true,
@@ -157,7 +152,7 @@ function customer() {
       foot: `<button class="btn" onclick="C.go('price')">Continue with ${S.tier === 'pro' ? 'Pro' : 'Standard'} · ${money(cq.total)}</button>` });
   }
   if (sc === 'price') {
-    scene = sceneFor(S.stops); const f = q.f;
+    scene = sceneFor(S.stops, { final: true }); const f = q.f;
     const line = (l, v, cls = '') => `<div class="cell" style="min-height:36px;padding:8px 16px"><div class="grow sub">${l}</div><div class="acc num sub" style="color:${cls === 'green' ? 'var(--green)' : 'var(--label)'}">${v}</div></div>`;
     html = `<button class="fbtn tl" aria-label="Back" onclick="C.go('options')">${icon('chevL')}</button>` + sheet({ id: 'price', detents: ['medium', 'large'], def: 'large', solid: true,
       head: `<div class="fn" style="text-transform:uppercase">One upfront price</div><div class="big-price num" style="margin:6px 0 4px">${money(q.total)}</div><div class="sub sec">${S.tier === 'pro' ? 'Pro' : 'Standard'} · ${S.stops.length} stops · ${S.speed === 'schedule' ? S.when : S.speed === 'rush' ? 'Rush' : 'Now'} · locked in</div>`,
@@ -170,7 +165,7 @@ function customer() {
   }
   if (sc === 'matching') {
     if (!S.trip) { S.c.screen = 'home'; return customer(); }
-    scene = sceneFor(S.trip.stops); const r = runner(S.trip.runner);
+    scene = sceneFor(S.trip.stops, { final: true }); const r = runner(S.trip.runner);
     html = `<div class="radar"><i></i><i></i><i></i></div>` + sheet({ id: 'matching', detents: ['medium'], def: 'medium', solid: true,
       body: `<div class="t2" style="margin:8px 0 12px">Matching your runner…</div><div class="indet"></div>
       <div class="sub sec" style="margin-top:16px">${S.trip.favMatch ? 'Asking ' + r.name + ' (your favorite) first.' : S.trip.favMsg ? esc(S.trip.favMsg) + ', so we’re matching the best available ' + (S.trip.tier === 'pro' ? 'Pro ' : '') + 'runner nearby.' : 'Finding a background-checked ' + (S.trip.tier === 'pro' ? 'Pro ' : '') + 'runner near ' + esc(placeOf(S.trip.stops[S.trip.q.route.order[0]]).name) + '.'}</div>
@@ -180,7 +175,7 @@ function customer() {
   if (sc === 'tracking') {
     if (!S.trip) { S.c.screen = 'home'; return customer(); }
     const t = S.trip, r = runner(t.runner), n = t.stops.length, order = t.q.route.order, done = t.step > n;
-    scene = sceneFor(t.stops, { progress: t.step, doneCount: t.step });
+    scene = sceneFor(t.stops, { progress: t.step, doneCount: t.step, final: true });
     const eta = done ? 0 : Math.max(3, Math.round(t.q.eta * (1 - t.step / (n + 1))));
     const isFav = S.favs.includes(r.id);
     html = `<button class="fbtn tl" aria-label="Minimize" onclick="C.tab('home')">${icon('chevD')}</button><button class="fbtn tr" aria-label="Share trip" onclick="C.share()">${icon('share')}</button>` + sheet({ id: 'track', detents: ['peek', 'medium', 'large'], def: 'medium',
@@ -237,22 +232,21 @@ function customer() {
 /* ---------- stop editing & route list ---------- */
 function stopCell(s, i) {
   const p = placeOf(s), T = TYPES[s.type], open = S.open === s.id, goods = s.items.reduce((a, x) => a + (+x.p || 0), 0);
-  const pro = (T.pro || goods >= HIGH_VALUE || s.white);
+  const pro = (typePro(s) || goods >= HIGH_VALUE || s.white);
   const pickups = S.stops.filter(x => x.id !== s.id && (x.type === 'Personal pickup' || TYPES[x.type].store));
   const head = cell({ ic: T.ic, title: esc(p.name) + (pro ? ' ' + tierBadge('pro') : ''), sub: esc(s.type) + (s.items.length ? ' · ' + s.items.length + ' item' + (s.items.length > 1 ? 's' : '') : '') + (goods ? ' · ' + money(goods) : '') + (s.from ? ' · <span class="carry">' + icon('bag', 's') + 'from ' + esc(placeOf(S.stops.find(x => x.id === s.from) || {}).name) + '</span>' : ''), chev: 0, tap: `C.toggle('${s.id}')`,
     acc: `<span class="chev" style="transform:rotate(${open ? 90 : 0}deg);transition:transform .3s var(--spring)">${icon('chevR', 's')}</span>` });
   if (!open) return head;
-  const placeOpts = Object.entries(PLACES).filter(([k, x]) => x.type === s.type || x.type === 'Personal' || (s.type === 'Drop-off' && x.type === 'Drop-off') || k === s.pid);
   return head + `<div class="cell" style="display:block;--inset:16px;padding-top:4px">
-    <label class="fn">Location</label><select class="input" style="margin:4px 0 8px" aria-label="Location" onchange="C.setPlace('${s.id}',this.value)">${placeOpts.map(([k, x]) => `<option value="${k}" ${k === s.pid ? 'selected' : ''}>${esc(x.name)} · ${esc(x.addr)}</option>`).join('')}<option value="__custom" ${s.custom ? 'selected' : ''}>Other address…</option></select>
-    ${s.custom ? `<input class="input" style="margin-bottom:8px" placeholder="Street address" aria-label="Street address" value="${esc(s.custom.addr)}" onchange="C.setCustom('${s.id}',this.value)">` : ''}
+    <div style="display:flex;align-items:center;gap:10px;margin:4px 0 10px"><span class="tint">${icon('pin')}</span><div style="flex:1;min-width:0"><div class="sub ellip">${esc(p.name)}</div><div class="cap ellip">${esc(p.addr || '')}</div></div><button class="btn sm gray" onclick="AS.open({ replace: '${s.id}' })">Change</button></div>
+    ${T.store && storeKindOf(s) ? `<button class="btn gray" style="margin-bottom:10px" onclick="ST.edit('${s.id}')">${icon('bag', 's')} Browse ${esc(p.name)} · edit items</button>` : ''}
     ${s.type === 'Drop-off' || s.type === 'Custom task' ? `<label class="fn">Deliver an item picked up at</label><select class="input" style="margin:4px 0 8px" aria-label="Linked pickup" onchange="C.link('${s.id}',this.value)"><option value="">Nothing linked</option>${pickups.map(x => `<option value="${x.id}" ${x.id === s.from ? 'selected' : ''}>${esc(placeOf(x).name)}</option>`).join('')}</select>` : ''}
     <label class="fn">${T.store ? 'Items' : 'What to pick up / drop off'}</label>
     ${s.items.map((x, j) => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:.5px solid var(--sep)"><span class="sub" style="flex:1">${esc(x.n)}</span>${T.store ? `<span class="sub num sec">${money(+x.p || 0)}</span>` : ''}<button class="iconbtn" style="width:28px;height:28px" aria-label="Remove ${esc(x.n)}" onclick="C.rmItem('${s.id}',${j})">${icon('minus', 's')}</button></div>`).join('')}
-    <div style="display:flex;gap:8px;margin:8px 0"><input class="input" id="in_${s.id}" placeholder="${T.store ? 'Add item' : 'Describe it'}" aria-label="New item" onkeydown="if(event.key==='Enter')C.addItem('${s.id}')">${T.store ? `<input class="input" id="ip_${s.id}" style="width:84px" inputmode="decimal" placeholder="$ est." aria-label="Estimated price">` : ''}<button class="btn sm" aria-label="Add item" onclick="C.addItem('${s.id}')">${icon('plus', 's')}</button></div>
+    <div style="display:flex;gap:8px;margin:8px 0"><input class="input" id="in_${s.id}" placeholder="${T.store ? 'Add something not listed' : 'Describe it'}" aria-label="New item" onkeydown="if(event.key==='Enter')C.addItem('${s.id}')">${T.store ? `<input class="input" id="ip_${s.id}" style="width:84px" inputmode="decimal" placeholder="$ est." aria-label="Estimated price">` : ''}<button class="btn sm" aria-label="Add item" onclick="C.addItem('${s.id}')">${icon('plus', 's')}</button></div>
     <input class="input" placeholder="Note for runner" aria-label="Note for runner" value="${esc(s.note)}" onchange="C.note('${s.id}',this.value)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px"><span class="sub">White-glove care ${tierBadge('pro')}</span><button class="toggle ${s.white ? 'on' : ''}" role="switch" aria-checked="${!!s.white}" aria-label="White-glove care" onclick="C.white('${s.id}')"></button></div>
-    ${T.pro ? `<div class="cap" style="margin-top:6px">${esc(T.pro)}: a Pro runner is required.</div>` : goods >= HIGH_VALUE ? `<div class="cap" style="margin-top:6px">Items over ${money(HIGH_VALUE)}: a Pro runner is required.</div>` : ''}
+    ${typePro(s) ? `<div class="cap" style="margin-top:6px">${esc(typePro(s))}: a Pro runner is required.</div>` : goods >= HIGH_VALUE ? `<div class="cap" style="margin-top:6px">Items over ${money(HIGH_VALUE)}: a Pro runner is required.</div>` : ''}
     <button class="btn plain" style="color:var(--red);margin-top:4px" onclick="C.remove('${s.id}')">Remove stop</button></div>`;
 }
 function routeList(stops, order, o = {}) {
@@ -265,7 +259,7 @@ function routeList(stops, order, o = {}) {
     const carrying = [...carried].map(id => stops.find(x => x.id === id)).filter(Boolean);
     const linked = s.from ? stops.find(x => x.id === s.from) : null;
     rows += `<div class="rstop" ${cur ? 'style="background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:12px;margin:0 -8px;padding:10px 8px"' : ''}><div class="rail"><span class="n ${done ? 'done' : ''}">${done ? icon('check', 's') : k + 1}</span></div><div style="flex:1;min-width:0">
-      <div class="hl">${esc(p.name)} ${(TYPES[s.type].pro || s.white) ? tierBadge('pro') : ''}</div><div class="fn">${esc(s.type)} · ${esc(p.addr || '')}</div>
+      <div class="hl">${esc(p.name)} ${(typePro(s) || s.white) ? tierBadge('pro') : ''}</div><div class="fn">${esc(s.type)} · ${esc(p.addr || '')}</div>
       ${s.items.length ? `<div class="sub sec" style="margin-top:2px">${s.items.map(x => esc(x.n)).join(', ')}</div>` : ''}
       ${linked ? `<div class="carry" style="margin-top:4px">${icon('box', 's')}Drop off: ${esc(linked.items.map(x => x.n).join(', ') || 'item')} from ${esc(placeOf(linked).name)}</div>` : ''}
       ${!done && carrying.length && o.carry !== false ? `<div class="carry" style="margin-top:4px;color:var(--label2)">${icon('bag', 's')}Carrying after: ${carrying.map(x => esc(placeOf(x).name)).join(', ')}</div>` : ''}
@@ -276,7 +270,7 @@ function routeList(stops, order, o = {}) {
 }
 
 /* ================= RUNNER ================= */
-const PRO_OFFER = { tier: 'pro', cust: 'M. Levi', stops: [mkStop('Pharmacy', 'cvs', { items: [{ n: 'Rx pickup (ID check)', p: 18 }] }), mkStop('Personal pickup', 'framer', { id: 'sFrame', items: [{ n: 'Framed oil painting ($1,200)', p: 0 }], white: true }), mkStop('Drop-off', 'kingspt', { from: 'sFrame', items: [{ n: 'Hang painting, white-glove' }] })] };
+const PRO_OFFER = { tier: 'pro', cust: 'M. Levi', stops: [mkStop('Pharmacy', 'cvs', { items: [{ n: 'Rx pickup (ID check)', p: 18, rx: true }] }), mkStop('Personal pickup', 'framer', { id: 'sFrame', items: [{ n: 'Framed oil painting ($1,200)', p: 0 }], white: true }), mkStop('Drop-off', 'kingspt', { from: 'sFrame', items: [{ n: 'Hang painting, white-glove' }] })] };
 const STD_OFFER = { tier: 'standard', cust: 'Dana K.', stops: [mkStop('Groceries', 'stopshop', { items: [{ n: '9 items', p: 42 }] }), mkStop('Returns', 'ups', { items: [{ n: 'Amazon return' }] }), mkStop('Dry cleaning', 'cleaners', { items: [{ n: '2 suits' }] })] };
 function offers() { const me = runner(S.r.me); return me.tier === 'pro' ? [PRO_OFFER, STD_OFFER] : [STD_OFFER]; }
 function offerPay(o) { const q = quote({ stops: o.stops, tier: o.tier, member: false, speed: 'now' }); let pay = q.f.fee * S.pay.runnerShare / 100; if (o.tier === 'pro') pay *= 1 + S.pay.proPayBoost / 100; return { pay, q }; }
@@ -313,7 +307,7 @@ function runnerView() {
   }
   if (t === 'route' && S.r.job) {
     const j = S.r.job, r = computeRoute(j.stops, HUB, null), n = j.stops.length, k = S.r.stop, cur = k < n ? j.stops[r.order[k]] : null;
-    scene = sceneFor(j.stops, { start: HUB, end: null, progress: k, doneCount: k });
+    scene = sceneFor(j.stops, { start: HUB, end: null, progress: k, doneCount: k, final: true });
     const carried = j.stops.filter((s, idx) => r.order.indexOf(idx) < k && (s.type === 'Personal pickup' || TYPES[s.type].store) && !(j.stops.some(d => d.from === s.id && r.order.indexOf(j.stops.indexOf(d)) < k)));
     html = `<div class="turn"><div class="ar">${icon('turn', 'l')}</div><div style="flex:1;min-width:0"><div class="t3 num">0.3 mi</div><div class="sub ellip" style="opacity:.8">${cur ? 'Toward ' + esc(placeOf(cur).name) : 'Trip complete'}</div></div></div>` + sheet({ id: 'rroute', detents: ['peek', 'medium', 'large'], def: 'medium', tabbar: true,
       head: `<div style="display:flex;justify-content:space-between;align-items:center"><div><div class="fn" style="text-transform:uppercase">Stop ${Math.min(k + 1, n)} of ${n} ${j.tier === 'pro' ? tierBadge('pro') : ''}</div><div class="t2 ellip">${cur ? esc(placeOf(cur).name) : 'All done'}</div></div><button class="iconbtn" aria-label="Chat customer" onclick="toast('Chat with ${esc(j.cust)} (demo)','chat')">${icon('chat')}</button></div>`,
@@ -392,7 +386,7 @@ function R() {
   else $$('#screen [data-scroll]').forEach(e => { if (scrolls[e.dataset.scroll] != null) e.scrollTop = scrolls[e.dataset.scroll]; });
   $('#map').style.visibility = out.scene ? 'visible' : 'hidden';
   if (out.scene) Maps.render($('#map'), out.scene);
-  layoutSheets(); bindCollapse(); dev.dataset.dark = '';
+  layoutSheets(); bindCollapse(); mountAdd(); dev.dataset.dark = '';
 }
 function detentPx(d, sh) {
   const H = $('#device').clientHeight, tb = sh.classList.contains('has-tabbar') ? 83 : 0;

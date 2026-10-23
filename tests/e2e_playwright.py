@@ -38,7 +38,7 @@ def run(w,h,mobile,tag):
     ev("setView('c')"); ev("C.tab('home')")
     g=pg.locator('.sheet .grabber').bounding_box(); pg.mouse.move(g['x']+g['width']/2,g['y']+5); pg.mouse.down(); pg.mouse.move(g['x']+g['width']/2,g['y']-250,steps=8); pg.mouse.up(); pg.wait_for_timeout(500); shot('14_sheet_dragged_large')
     pg.click('.where'); pg.wait_for_timeout(400)
-    pg.click('.tile >> nth=0'); pg.wait_for_timeout(400)
+    pg.fill('#acq','stop'); pg.wait_for_timeout(500); assert pg.locator('#acList [role=option]').count()>0
     b.close()
 run(390,844,True,'iphone')
 run(1440,900,False,'desktop')

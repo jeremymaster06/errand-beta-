@@ -4,19 +4,23 @@
 (function () {
   'use strict';
   const NS = 'http://www.w3.org/2000/svg';
-  let mode = (typeof MAPS_API_KEY === 'string' && MAPS_API_KEY) ? 'loading' : 'fallback';
+  const HAS_KEY = typeof MAPS_API_KEY === 'string' && !!MAPS_API_KEY;
+  let mode = 'fallback', loadP = null; // the Google script is loaded lazily on first map render / first place search
+  const routeCache = new Map(); // final routes only, keyed by stop coordinates
   let g = null, gmap = null, gObjs = [], gRunner = null, gPath = [], lastKey = '', anim = { cur: 0, target: 0, raf: 0 }, host = null;
 
   /* ---------- Google ---------- */
   function loadGoogle() {
-    window.gm_authFailure = () => { console.warn('Google Maps auth failed; using fallback map.'); mode = 'fallback'; lastKey = ''; if (host) Maps.render(host.el, host.scene, true); };
-    window.__errandMapsReady = () => { g = google.maps; mode = 'google'; lastKey = ''; if (host) Maps.render(host.el, host.scene, true); };
+    if (loadP) return loadP; if (!HAS_KEY) return (loadP = Promise.resolve(false));
+    loadP = new Promise(res => { const done = ok => res(ok);
+    window.gm_authFailure = () => { if (window.Places) Places._fail(); console.warn('Google Maps auth failed; using fallback map.'); mode = 'fallback'; lastKey = ''; if (host) Maps.render(host.el, host.scene, true); done(false); };
+    window.__errandMapsReady = () => { g = google.maps; mode = 'google'; lastKey = ''; if (host) Maps.render(host.el, host.scene, true); done(true); };
     const s = document.createElement('script');
     s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(MAPS_API_KEY) + '&libraries=places,marker&loading=async&callback=__errandMapsReady';
-    s.async = true; s.onerror = () => { mode = 'fallback'; lastKey = ''; if (host) Maps.render(host.el, host.scene, true); };
-    document.head.appendChild(s);
+    s.async = true; s.onerror = () => { mode = 'fallback'; lastKey = ''; if (host) Maps.render(host.el, host.scene, true); done(false); };
+    document.head.appendChild(s); });
+    return loadP;
   }
-  if (mode === 'loading') loadGoogle();
 
   const accent = () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6D28D9';
 
@@ -32,14 +36,26 @@
         icon: { path: g.SymbolPath.CIRCLE, scale: p.kind === 'start' ? 6 : (p.kind === 'car' ? 7 : 12), fillColor: p.kind === 'car' ? '#444' : p.kind === 'start' ? '#111' : (p.kind === 'end' ? '#111' : col), fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 } })); });
     gmap.fitBounds(b, { top: 60, bottom: Math.round(el.clientHeight * 0.5), left: 30, right: 30 });
     const path = scene.path; if (path.length < 2) return;
-    new g.DirectionsService().route({ origin: path[0], destination: path[path.length - 1],
+    const rkey = JSON.stringify(path.map(p => [+p.lat.toFixed(5), +p.lng.toFixed(5)]));
+    const draw = (pts, real) => { if (real) routeCache.set(rkey, pts);
+      gPath = pts; gObjs.push(new g.Polyline({ map: gmap, path: gPath, strokeColor: '#000', strokeOpacity: .25, strokeWeight: 9 }));
+      gObjs.push(new g.Polyline({ map: gmap, path: gPath, strokeColor: col, strokeWeight: 5 })); setRunner(scene.runner); };
+    const straight = () => path.map(p => new g.LatLng(p.lat, p.lng));
+    const viaDirections = () => { try { new g.DirectionsService().route({ origin: path[0], destination: path[path.length - 1],
       waypoints: path.slice(1, -1).map(p => ({ location: p, stopover: true })), optimizeWaypoints: false, travelMode: g.TravelMode.DRIVING },
-      (res, status) => {
-        gPath = status === 'OK' ? res.routes[0].overview_path : path.map(p => new g.LatLng(p.lat, p.lng));
-        gObjs.push(new g.Polyline({ map: gmap, path: gPath, strokeColor: '#000', strokeOpacity: .25, strokeWeight: 9 }));
-        gObjs.push(new g.Polyline({ map: gmap, path: gPath, strokeColor: col, strokeWeight: 5 }));
-        setRunner(scene.runner);
-      });
+      (res, status) => status === 'OK' ? draw(res.routes[0].overview_path, true) : draw(straight())); } catch (e) { draw(straight()); } };
+    /* Cost rule: no Routes/Directions request until the stops are final (trip confirmed). Before that, straight legs. */
+    if (!scene.final) return draw(straight());
+    if (routeCache.has(rkey)) return draw(routeCache.get(rkey));
+    /* Routes API (Route class, preferred). Our solver fixes the stop order (pickup-before-drop-off), so Google only draws roads. */
+    const ll = v => (typeof v === 'function' ? v() : v);
+    (g.importLibrary ? g.importLibrary('routes') : Promise.reject()).then(lib => {
+      if (!lib || !lib.Route) throw new Error('no Route class');
+      return lib.Route.computeRoutes({ origin: path[0], destination: path[path.length - 1], intermediates: path.slice(1, -1).map(p => ({ location: p })),
+        travelMode: 'DRIVING', fields: ['path', 'distanceMeters', 'durationMillis'] });
+    }).then(({ routes }) => { if (!routes || !routes[0] || !routes[0].path) throw new Error('no route');
+      draw(routes[0].path.map(p => new g.LatLng(ll(p.lat), ll(p.lng))), true); })
+      .catch(() => viaDirections());
   }
   function gPointAt(t) {
     if (!gPath.length) return null; const L = []; let tot = 0;
@@ -100,9 +116,9 @@
   }
 
   const Maps = {
-    get mode() { return mode; },
+    get mode() { return mode; }, ensure: () => loadGoogle(),
     render(el, scene, force) {
-      host = { el, scene };
+      host = { el, scene }; if (HAS_KEY && !loadP) loadGoogle();
       const key = JSON.stringify([scene.pts, scene.path, mode, scene.top, scene.bottom]);
       const redraw = key !== lastKey || force || !el.firstChild;
       if (redraw) {
@@ -115,13 +131,7 @@
       if (anim.target !== scene.runner || redraw) setRunner(scene.runner);
     },
     /* Static, non-interactive SVG for dashboards. */
-    staticSvg(scene) { return svgFallback(scene).replace('<g id="runnerDot"', '<g data-static="1"').replace(' id="routeLine"', ''); },
-    /* Places Autocomplete on an <input> when Google is live; no-op in fallback. */
-    autocomplete(input, onPick) {
-      if (mode !== 'google' || !g.places || input.dataset.ac) return; input.dataset.ac = 1;
-      const ac = new g.places.Autocomplete(input, { fields: ['geometry', 'name', 'formatted_address'] });
-      ac.addListener('place_changed', () => { const p = ac.getPlace(); if (p && p.geometry) onPick({ name: p.name, addr: p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }); });
-    }
+    staticSvg(scene) { return svgFallback(scene).replace('<g id="runnerDot"', '<g data-static="1"').replace(' id="routeLine"', ''); }
   };
   window.Maps = Maps;
 })();

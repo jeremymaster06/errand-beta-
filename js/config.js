@@ -1,7 +1,7 @@
 /* ================= CONFIG — edit here ================= */
 /* Google Maps: paste a browser key here to switch from the built-in fallback map to live Google Maps.
  * See MAPS_SETUP.md for which APIs to enable and how to restrict the key. Leave '' for the fallback map. */
-const MAPS_API_KEY = '';
+const MAPS_API_KEY = 'AIzaSyD09YHw_W7PGrjCkNSpE_SAcdolzVlvBTM';
 /* Optional: a Map ID (Cloud-based map styling) for AdvancedMarkers. Leave '' to use classic markers. */
 const MAPS_MAP_ID = '';
 

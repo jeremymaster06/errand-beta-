@@ -1,5 +1,5 @@
 /* Network-first service worker: always fresh when online, cached copy offline. */
-const CACHE = 'errandco-redesign-v1';
+const CACHE = 'errandco-redesign-v2';
 self.addEventListener('install', e => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {
