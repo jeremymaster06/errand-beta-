@@ -1,0 +1,726 @@
+[
+ {
+  "name": "B gig 3 stops (headline)",
+  "inputs": {},
+  "expected": {
+   "minutes": "51.0",
+   "price": "41.00",
+   "runner_total": "26.95",
+   "runner_wage": "21.25",
+   "variable_cost": "33.47",
+   "margin_variable": "6.34",
+   "allin_cost": "47.17",
+   "margin_allin": "-6.17",
+   "customer_total": "191.00",
+   "runner_per_engaged_hr": "31.71"
+  }
+ },
+ {
+  "name": "A gig $17/logged @65%, 3 stops",
+  "inputs": {
+   "pay_basis": "logged",
+   "gig_rate": 17,
+   "gig_util": 0.65
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "42.00",
+   "runner_total": "27.93",
+   "runner_wage": "22.23",
+   "variable_cost": "34.46",
+   "margin_variable": "6.32",
+   "allin_cost": "48.19",
+   "margin_allin": "-6.19",
+   "customer_total": "192.00",
+   "runner_per_engaged_hr": "32.86"
+  }
+ },
+ {
+  "name": "B gig 1 stop + $3 tip, all cash-outs free",
+  "inputs": {
+   "stops": 1,
+   "tip": 3,
+   "perk": "all"
+  },
+  "expected": {
+   "minutes": "27.0",
+   "price": "23.00",
+   "runner_total": "17.67",
+   "runner_wage": "11.25",
+   "variable_cost": "18.21",
+   "margin_variable": "4.04",
+   "allin_cost": "31.12",
+   "margin_allin": "-8.12",
+   "customer_total": "76.00",
+   "runner_per_engaged_hr": "39.27"
+  }
+ },
+ {
+  "name": "B W-2 $27, 4 stops, at 1k/wk",
+  "inputs": {
+   "staffing": "w2",
+   "w2_rate": 27,
+   "stops": 4,
+   "trips_wk": 1000,
+   "maps_per_order": 0.11,
+   "fixed_monthly": 952.83
+  },
+  "expected": {
+   "minutes": "63.0",
+   "price": "66.00",
+   "runner_total": "42.28",
+   "runner_wage": "35.44",
+   "variable_cost": "54.26",
+   "margin_variable": "9.83",
+   "allin_cost": "59.12",
+   "margin_allin": "6.88",
+   "customer_total": "266.00",
+   "runner_per_engaged_hr": "40.27"
+  }
+ },
+ {
+  "name": "Hybrid 2 stops, one free cash-out/wk",
+  "inputs": {
+   "staffing": "hybrid",
+   "stops": 2,
+   "perk": "one_free_wk"
+  },
+  "expected": {
+   "minutes": "39.0",
+   "price": "40.00",
+   "runner_total": "24.63",
+   "runner_wage": "20.07",
+   "variable_cost": "32.39",
+   "margin_variable": "6.45",
+   "allin_cost": "45.91",
+   "margin_allin": "-5.91",
+   "customer_total": "140.00",
+   "runner_per_engaged_hr": "37.89"
+  }
+ },
+ {
+  "name": "B gig 3 stops, price override $39, $80 basket/stop",
+  "inputs": {
+   "price_override": 39,
+   "basket_per_stop": 80
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "39.00",
+   "runner_total": "26.95",
+   "runner_wage": "21.25",
+   "variable_cost": "36.08",
+   "margin_variable": "1.79",
+   "allin_cost": "49.98",
+   "margin_allin": "-10.98",
+   "customer_total": "279.00",
+   "runner_per_engaged_hr": "31.71"
+  }
+ },
+ {
+  "name": "Stop list: grocery 15 items, pharmacy, return -> house, dry",
+  "inputs": {
+   "stop_list": [
+    {
+     "type": "grocery",
+     "items": 15
+    },
+    {
+     "type": "pharmacy"
+    },
+    {
+     "type": "return"
+    }
+   ]
+  },
+  "expected": {
+   "minutes": "66.1",
+   "price": "49.00",
+   "runner_total": "33.23",
+   "runner_wage": "27.53",
+   "variable_cost": "39.77",
+   "margin_variable": "7.81",
+   "allin_cost": "53.72",
+   "margin_allin": "-4.72",
+   "customer_total": "199.00",
+   "runner_per_engaged_hr": "30.17"
+  }
+ },
+ {
+  "name": "Stop list in snow, apartment drop, $2 busy fee, $7.46 toll",
+  "inputs": {
+   "stop_list": [
+    {
+     "type": "pickup"
+    },
+    {
+     "type": "post_office"
+    }
+   ],
+   "dropoff": "apartment",
+   "weather": "snow",
+   "busy_fee": 2,
+   "tolls": 7.46
+  },
+  "expected": {
+   "minutes": "48.2",
+   "price": "38.00",
+   "runner_total": "24.66",
+   "runner_wage": "20.10",
+   "variable_cost": "29.63",
+   "margin_variable": "7.05",
+   "allin_cost": "43.30",
+   "margin_allin": "-5.30",
+   "customer_total": "145.46",
+   "runner_per_engaged_hr": "30.67"
+  }
+ },
+ {
+  "name": "Hybrid W-2 $17/paid hr + $2/stop, 3 stops, normal (65% busy)",
+  "inputs": {
+   "staffing": "base_comm"
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "55.00",
+   "runner_total": "33.93",
+   "runner_wage": "28.23",
+   "variable_cost": "44.60",
+   "margin_variable": "8.80",
+   "allin_cost": "58.75",
+   "margin_allin": "-3.75",
+   "customer_total": "205.00",
+   "runner_per_engaged_hr": "39.92"
+  }
+ },
+ {
+  "name": "Hybrid W-2 $17 + $2/stop, 3 stops, slow (40%), $2.28 tip",
+  "inputs": {
+   "staffing": "base_comm",
+   "hc_util": 0.4,
+   "tip": 2.28
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "74.00",
+   "runner_total": "50.11",
+   "runner_wage": "42.13",
+   "variable_cost": "60.59",
+   "margin_variable": "11.20",
+   "allin_cost": "75.41",
+   "margin_allin": "-1.41",
+   "customer_total": "226.28",
+   "runner_per_engaged_hr": "58.95"
+  }
+ },
+ {
+  "name": "Hybrid W-2 $17 + $2/stop, 2 stops, busy (85%), at 1k/wk",
+  "inputs": {
+   "staffing": "base_comm",
+   "hc_util": 0.85,
+   "stops": 2,
+   "trips_wk": 1000,
+   "maps_per_order": 0.11,
+   "fixed_monthly": 952.83
+  },
+  "expected": {
+   "minutes": "39.0",
+   "price": "34.00",
+   "runner_total": "21.56",
+   "runner_wage": "17.00",
+   "variable_cost": "27.66",
+   "margin_variable": "5.35",
+   "allin_cost": "31.21",
+   "margin_allin": "2.79",
+   "customer_total": "134.00",
+   "runner_per_engaged_hr": "33.17"
+  }
+ },
+ {
+  "name": "drive_minutes 20 overrides speed, rain",
+  "inputs": {
+   "stop_list": [
+    {
+     "type": "grocery",
+     "items": 10
+    },
+    {
+     "type": "pickup"
+    }
+   ],
+   "drive_minutes": 20,
+   "weather": "rain"
+  },
+  "expected": {
+   "minutes": "48.4",
+   "price": "36.00",
+   "runner_total": "24.73",
+   "runner_wage": "20.17",
+   "variable_cost": "29.70",
+   "margin_variable": "5.26",
+   "allin_cost": "43.08",
+   "margin_allin": "-7.08",
+   "customer_total": "136.00",
+   "runner_per_engaged_hr": "30.66"
+  }
+ },
+ {
+  "name": "drive_minutes 0, apartment",
+  "inputs": {
+   "stop_list": [
+    {
+     "type": "pickup"
+    },
+    {
+     "type": "return"
+    }
+   ],
+   "drive_minutes": 0,
+   "dropoff": "apartment"
+  },
+  "expected": {
+   "minutes": "23.4",
+   "price": "24.00",
+   "runner_total": "14.31",
+   "runner_wage": "9.75",
+   "variable_cost": "19.25",
+   "margin_variable": "4.05",
+   "allin_cost": "32.26",
+   "margin_allin": "-8.26",
+   "customer_total": "124.00",
+   "runner_per_engaged_hr": "36.69"
+  }
+ },
+ {
+  "name": "grocery 0 items (queue only) + negative clamped",
+  "inputs": {
+   "stop_list": [
+    {
+     "type": "grocery",
+     "items": 0
+    },
+    {
+     "type": "grocery",
+     "items": -3
+    }
+   ]
+  },
+  "expected": {
+   "minutes": "34.5",
+   "price": "29.00",
+   "runner_total": "18.92",
+   "runner_wage": "14.36",
+   "variable_cost": "23.87",
+   "margin_variable": "4.29",
+   "allin_cost": "37.03",
+   "margin_allin": "-8.03",
+   "customer_total": "129.00",
+   "runner_per_engaged_hr": "32.94"
+  }
+ },
+ {
+  "name": "1099 per-minute $0.42/engaged min, 3 stops, busy 85%",
+  "inputs": {
+   "staffing": "contractor_hc"
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "41.00",
+   "runner_total": "27.12",
+   "runner_wage": "21.42",
+   "variable_cost": "33.64",
+   "margin_variable": "6.17",
+   "allin_cost": "47.34",
+   "margin_allin": "-6.34",
+   "customer_total": "191.00",
+   "runner_per_engaged_hr": "31.91",
+   "topup": "0.00"
+  }
+ },
+ {
+  "name": "1099 per-minute, 3 stops, slow 40% (top-up to $17/logged hr)",
+  "inputs": {
+   "staffing": "contractor_hc",
+   "gig_util": 0.4,
+   "tip": 2.28
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "59.00",
+   "runner_total": "44.11",
+   "runner_wage": "36.13",
+   "variable_cost": "48.39",
+   "margin_variable": "8.83",
+   "allin_cost": "62.74",
+   "margin_allin": "-3.74",
+   "customer_total": "211.28",
+   "runner_per_engaged_hr": "51.89",
+   "topup": "14.71"
+  }
+ },
+ {
+  "name": "1099 per-minute, 1 stop, normal 65%",
+  "inputs": {
+   "staffing": "contractor_hc",
+   "stops": 1,
+   "gig_util": 0.65
+  },
+  "expected": {
+   "minutes": "27.0",
+   "price": "23.00",
+   "runner_total": "15.19",
+   "runner_wage": "11.77",
+   "variable_cost": "18.58",
+   "margin_variable": "3.75",
+   "allin_cost": "31.40",
+   "margin_allin": "-8.40",
+   "customer_total": "73.00",
+   "runner_per_engaged_hr": "33.76",
+   "topup": "0.43"
+  }
+ },
+ {
+  "name": "levers: store commission 3%, 3 stops",
+  "inputs": {
+   "store_comm_pct": 0.03
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "41.00",
+   "runner_total": "26.95",
+   "runner_wage": "21.25",
+   "variable_cost": "33.47",
+   "margin_variable": "10.84",
+   "allin_cost": "47.17",
+   "margin_allin": "-1.67",
+   "customer_total": "191.00",
+   "runner_per_engaged_hr": "31.71",
+   "topup": "0.00",
+   "store_commission": "4.50",
+   "peo_fee": "0.00",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-1.67"
+  }
+ },
+ {
+  "name": "levers: commission 15% clamps to 10%",
+  "inputs": {
+   "store_comm_pct": 0.15
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "41.00",
+   "runner_total": "26.95",
+   "runner_wage": "21.25",
+   "variable_cost": "33.47",
+   "margin_variable": "21.34",
+   "allin_cost": "47.17",
+   "margin_allin": "8.83",
+   "customer_total": "191.00",
+   "runner_per_engaged_hr": "31.71",
+   "topup": "0.00",
+   "store_commission": "15.00",
+   "peo_fee": "0.00",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "8.83"
+  }
+ },
+ {
+  "name": "levers: member $9.99, $3 off, 4 trips/mo",
+  "inputs": {
+   "member_price": 9.99,
+   "member_discount": 3,
+   "member_trips": 4
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "41.00",
+   "runner_total": "26.95",
+   "runner_wage": "21.25",
+   "variable_cost": "33.47",
+   "margin_variable": "6.34",
+   "allin_cost": "47.17",
+   "margin_allin": "-6.17",
+   "customer_total": "191.00",
+   "runner_per_engaged_hr": "31.71",
+   "topup": "0.00",
+   "store_commission": "0.00",
+   "peo_fee": "0.00",
+   "member_net_per_trip": "-0.50",
+   "margin_allin_member": "-6.67"
+  }
+ },
+ {
+  "name": "levers: batch 30% of trips x 35% saving, gig",
+  "inputs": {
+   "batch_share": 0.3,
+   "batch_saving": 0.35
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "38.00",
+   "runner_total": "24.12",
+   "runner_wage": "19.02",
+   "variable_cost": "30.64",
+   "margin_variable": "6.26",
+   "allin_cost": "44.24",
+   "margin_allin": "-6.24",
+   "customer_total": "188.00",
+   "runner_per_engaged_hr": "28.38",
+   "topup": "0.00",
+   "store_commission": "0.00",
+   "peo_fee": "0.00",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-6.24"
+  }
+ },
+ {
+  "name": "levers: batch 50% x 20%, hybrid W-2 slow",
+  "inputs": {
+   "staffing": "base_comm",
+   "hc_util": 0.4,
+   "batch_share": 0.5
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "67.00",
+   "runner_total": "43.05",
+   "runner_wage": "37.92",
+   "variable_cost": "55.18",
+   "margin_variable": "9.88",
+   "allin_cost": "69.71",
+   "margin_allin": "-2.71",
+   "customer_total": "217.00",
+   "runner_per_engaged_hr": "50.65",
+   "topup": "0.00",
+   "store_commission": "0.00",
+   "peo_fee": "0.00",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-2.71"
+  }
+ },
+ {
+  "name": "PEO $79 PEPM, W-2 $25 normal",
+  "inputs": {
+   "staffing": "w2",
+   "w2_util": 0.65,
+   "peo_pepm": 79
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "62.00",
+   "runner_total": "38.39",
+   "runner_wage": "32.69",
+   "variable_cost": "50.64",
+   "margin_variable": "9.56",
+   "allin_cost": "65.01",
+   "margin_allin": "-3.01",
+   "customer_total": "212.00",
+   "runner_per_engaged_hr": "45.16",
+   "topup": "0.00",
+   "store_commission": "0.00",
+   "peo_fee": "0.91",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-3.01"
+  }
+ },
+ {
+  "name": "PEO 12% of payroll, hybrid W-2 busy",
+  "inputs": {
+   "staffing": "base_comm",
+   "hc_util": 0.85,
+   "peo_pct": 0.12
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "51.00",
+   "runner_total": "28.70",
+   "runner_wage": "23.00",
+   "variable_cost": "41.34",
+   "margin_variable": "8.18",
+   "allin_cost": "55.36",
+   "margin_allin": "-4.36",
+   "customer_total": "201.00",
+   "runner_per_engaged_hr": "33.76",
+   "topup": "0.00",
+   "store_commission": "0.00",
+   "peo_fee": "2.76",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-4.36"
+  }
+ },
+ {
+  "name": "staffing firm 40% markup, W-2 $25 normal",
+  "inputs": {
+   "staffing": "w2",
+   "w2_util": 0.65,
+   "staff_markup": 0.4
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "71.00",
+   "runner_total": "38.39",
+   "runner_wage": "32.69",
+   "variable_cost": "57.89",
+   "margin_variable": "11.05",
+   "allin_cost": "72.55",
+   "margin_allin": "-1.55",
+   "customer_total": "221.00",
+   "runner_per_engaged_hr": "45.16",
+   "topup": "0.00",
+   "store_commission": "0.00",
+   "peo_fee": "0.00",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-1.55"
+  }
+ },
+ {
+  "name": "Otto 0.65 trips/paid hr, hybrid W-2",
+  "inputs": {
+   "staffing": "base_comm",
+   "trips_per_paid_hr": 0.65
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "60.00",
+   "runner_total": "37.85",
+   "runner_wage": "32.15",
+   "variable_cost": "49.11",
+   "margin_variable": "9.15",
+   "allin_cost": "63.42",
+   "margin_allin": "-3.42",
+   "customer_total": "210.00",
+   "runner_per_engaged_hr": "44.53",
+   "topup": "0.00",
+   "store_commission": "0.00",
+   "peo_fee": "0.00",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-3.42"
+  }
+ },
+ {
+  "name": "Otto 0.9 trips/paid hr, W-2 $25",
+  "inputs": {
+   "staffing": "w2",
+   "trips_per_paid_hr": 0.9
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "54.00",
+   "runner_total": "33.48",
+   "runner_wage": "27.78",
+   "variable_cost": "44.08",
+   "margin_variable": "8.35",
+   "allin_cost": "58.20",
+   "margin_allin": "-4.20",
+   "customer_total": "204.00",
+   "runner_per_engaged_hr": "39.39",
+   "topup": "0.00",
+   "store_commission": "0.00",
+   "peo_fee": "0.00",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-4.20"
+  }
+ },
+ {
+  "name": "Otto 1.1 trips/paid hr, gig B + 3% commission + 30% batched",
+  "inputs": {
+   "trips_per_paid_hr": 1.1,
+   "store_comm_pct": 0.03,
+   "batch_share": 0.3
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "39.00",
+   "runner_total": "25.34",
+   "runner_wage": "19.98",
+   "variable_cost": "31.86",
+   "margin_variable": "10.51",
+   "allin_cost": "45.49",
+   "margin_allin": "-1.99",
+   "customer_total": "189.00",
+   "runner_per_engaged_hr": "29.81",
+   "topup": "0.00",
+   "store_commission": "4.50",
+   "peo_fee": "0.00",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-1.99"
+  }
+ },
+ {
+  "name": "Otto 0.65, contractor (top-up)",
+  "inputs": {
+   "staffing": "contractor_hc",
+   "trips_per_paid_hr": 0.65
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "47.00",
+   "runner_total": "31.85",
+   "runner_wage": "26.15",
+   "variable_cost": "38.39",
+   "margin_variable": "7.25",
+   "allin_cost": "52.28",
+   "margin_allin": "-5.28",
+   "customer_total": "197.00",
+   "runner_per_engaged_hr": "37.47",
+   "topup": "4.73",
+   "store_commission": "0.00",
+   "peo_fee": "0.00",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-5.28"
+  }
+ },
+ {
+  "name": "Lex rules: W-2 $25, 0.9 tph, Gusto $55/mo, call-in 0.0333 h",
+  "inputs": {
+   "staffing": "w2",
+   "trips_per_paid_hr": 0.9,
+   "payroll_monthly": 55,
+   "callin_hrs": 0.0333
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "55.00",
+   "runner_total": "33.48",
+   "runner_wage": "27.78",
+   "variable_cost": "45.37",
+   "margin_variable": "8.03",
+   "allin_cost": "59.52",
+   "margin_allin": "-4.52",
+   "customer_total": "205.00",
+   "runner_per_engaged_hr": "39.39",
+   "topup": "0.00",
+   "store_commission": "0.00",
+   "peo_fee": "0.00",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-4.52"
+  }
+ },
+ {
+  "name": "Lex rules: hybrid PEO $79, 4h block 0.75 tph, 30% batched",
+  "inputs": {
+   "staffing": "base_comm",
+   "trips_per_paid_hr": 0.75,
+   "peo_pepm": 79,
+   "batch_share": 0.3
+  },
+  "expected": {
+   "minutes": "51.0",
+   "price": "53.00",
+   "runner_total": "32.31",
+   "runner_wage": "26.95",
+   "variable_cost": "43.70",
+   "margin_variable": "7.76",
+   "allin_cost": "57.78",
+   "margin_allin": "-4.78",
+   "customer_total": "203.00",
+   "runner_per_engaged_hr": "38.01",
+   "topup": "0.00",
+   "store_commission": "0.00",
+   "peo_fee": "0.91",
+   "member_net_per_trip": "0.00",
+   "margin_allin_member": "-4.78"
+  }
+ }
+]
