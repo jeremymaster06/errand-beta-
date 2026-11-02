@@ -1,26 +1,31 @@
 # [COMPANY NAME] Customer Terms of Service
-> **Draft, pending attorney review. Not in effect. This is a demo; no service is offered.** [BRACKETS] = placeholders.
+> **Draft for attorney review. Not in effect. This is a demo; no service is offered.** [BRACKETS] = placeholders.
 
 ## Plain-language summary
-- You ask us to run errands: pick up, buy, and drop off items, sometimes at several stops.
-- **One upfront price.** Before you confirm, we show one total. It includes the item cost estimate, our service charge, and all mandatory fees, but not taxes, tips, or anything you add later. If store prices change, we follow the adjustment rules in Section 4.
+- **You hire the runner, not us.** You pick a local runner and get an upfront quote from the runner you pick. Your contract for the errand is with that runner. We provide the app and payment processing.
+- **Runners set their own prices and hours.** We don't set, cap, or change a runner's price, assign jobs, or promise arrival times or results.
+- **Goods only.** Runners carry items, never passengers. You can't book a ride.
+- Item costs are passed through at shelf price, paid from a hold on your card. If store prices change, Section 4 applies.
 - **Tips are optional, and 100% goes to your runner.**
 - Disputes go to individual arbitration, not court or class actions. **You can opt out within 30 days.**
 - **Problems with an order?** Tell us as soon as you can, and within 14 days of delivery (or the scheduled completion). This doesn't take away any legal rights you can't waive.
 - **Claim limits:** up to $1,000 per item a runner buys for you; up to $500 declared value for packages we take to the post office or a carrier (you can buy carrier insurance for more); up to $300 per order for dry cleaning (normal wear and hidden or pre-existing defects aren't covered). These limits never reduce a refund for something we lost or damaged, up to its value within the limit.
-- **Repeat weekly errands:** we give at least 7 days' notice of any price change, and you can skip or cancel with one tap before each weekly charge.
+- **Repeat weekly errands:** each week is quoted by your runner, and you can skip or cancel with one tap before each weekly charge.
 - Our liability is otherwise limited to what the law allows, but that general cap doesn't shrink the claim limits above or refunds of what you were charged.
 
 ## 1. Who we are; acceptance
 These Terms are an agreement between you and [COMPANY LEGAL NAME], a [STATE] [ENTITY TYPE] ("we"). By creating an account or placing an order, you agree to these Terms and to our Privacy Policy. You must be 18 or older.
 
 ## 2. The service
-We connect you with runners. Depending on location, a runner is either our employee or an independent contractor. Runners pick up, buy, and deliver items you request. We are not the seller of third-party store goods unless we say otherwise at checkout. [COUNSEL: confirm agency vs. reseller structure; this affects sales tax and the money-transmission analysis.]
+2.1 **Marketplace.** We provide software that lets you find, choose, and pay independent runners. Each runner is an independent business. When you book, you contract directly with the runner you choose, on the job agreement shown at booking. We are not a party to that agreement, we don't perform the errand, and we don't set or adjust runner prices, schedules, or methods.
+2.2 **Payments.** Payments are processed by a licensed payment processor on the runner's behalf. Your payment to the processor counts as payment to the runner. Item purchases use a hold on your card and, if the runner chooses, a single-use card limited to that order.
+2.3 **Goods only.** The service is for carrying goods. Runners may not transport passengers, and you may not request or accept a ride through the service.
+2.4 Runners buy items as your purchasing agent. We are not the seller of store goods. [COUNSEL: confirm agency structure, sales tax, and money-transmission analysis.]
 
 Prohibited items include alcohol [unless licensed], tobacco/vape products, cannabis, prescription drugs [unless a compliant pharmacy pickup process exists], weapons, hazardous materials, and anything illegal.
 
 ## 3. Pricing: all-in upfront price
-3.1 **Total Price.** Before you confirm, we show a single Total Price. It includes (a) the estimated cost of items, (b) our service charge, and (c) every mandatory fee. We do not add mandatory fees that aren't in the Total Price. Taxes are [shown separately / included] [COUNSEL]. Optional tips and items you add later are not included.
+3.1 **Total Price.** Before you confirm, you see a single upfront quote from the runner you pick. It includes the runner's price for the errand and every mandatory fee, plus the item hold. The runner sets the price. If the runner proposes a different price before accepting, you must approve it. Taxes are [shown separately / included] [COUNSEL]. Optional tips and items you add later are not included.
 3.2 **Basis.** This follows the FTC's position on hidden or drip pricing under Section 5 of the FTC Act (15 U.S.C. §45), the FTC Rule on Unfair or Deceptive Fees (16 C.F.R. Part 464, effective May 12, 2025), and Cal. Civ. Code §1770(a)(29) (SB 478). Note: as finalized, Part 464 covers only live-event tickets and short-term lodging, so it does not directly apply to us. We follow its all-in approach as best practice and for the state laws that do apply. [COUNSEL: confirm NY GBL §349 and other state drip-pricing laws.]
 3.3 **Authorization hold.** We may place a temporary hold on your card for up to [X]% above the item estimate to cover substitutions and price changes.
 
@@ -36,7 +41,7 @@ Prohibited items include alcohol [unless licensed], tobacco/vape products, canna
 [COUNSEL: confirm the per-item/package/order amounts, valuation method, and interaction with GBL §349 and carrier liability rules.]
 
 ## 5. Tips
-Tips are optional. **100% of each tip goes to the runner who did your errand.** We do not use tips to meet minimum-pay obligations or to offset our pay to runners, and we don't deduct card-processing fees from them. Basis: Cal. Bus. & Prof. Code §7453(c); NY Labor Law §196-d for employees; NYC Admin. Code Title 20, ch. 15 (delivery-worker tip rules) where it applies. [COUNSEL: confirm coverage.]
+Tips are optional. **100% of each tip goes to the runner who did your errand.** We take nothing from tips and don't deduct card-processing fees from them. Basis: Cal. Bus. & Prof. Code §7453(c); NY Labor Law §196-d for employees; NYC Admin. Code Title 20, ch. 15 (delivery-worker tip rules) where it applies. [COUNSEL: confirm coverage.]
 
 ## 6. Your responsibilities
 Give accurate addresses and instructions, be available or give safe drop-off directions, and treat runners respectfully. Harassment or discrimination leads to removal from the service.

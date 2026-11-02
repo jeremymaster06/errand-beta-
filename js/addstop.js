@@ -1,21 +1,18 @@
-/* Add-a-stop flow: place search (autocomplete) -> store item browser (stores) or stop details (addresses).
- * Security: every user- or API-provided string is inserted with textContent / DOM APIs, never as HTML.
- * Static markup (icon() SVG, screen shells) is built with dom(); no HTML sinks. */
 'use strict';
 const KIND_TYPE = { grocery: 'Groceries', pharmacy: 'Pharmacy', cleaners: 'Dry cleaning', post: 'Post office', shipping: 'Returns', hardware: 'Shopping', pet: 'Shopping', bakery: 'Shopping', office: 'Shopping', library: 'Returns', donation: 'Drop-off' };
 const KIND_IC = { grocery: 'cart', pharmacy: 'pill', hardware: 'wrench', pet: 'paw', bakery: 'bread', cleaners: 'hanger', post: 'envelope', shipping: 'box', office: 'book', library: 'book', donation: 'gift', address: 'pin', saved: 'star' };
-
-/* tiny DOM builder: h('div', {class, text, on:{click}, ...attrs}, ...children). Strings children become text nodes. */
 function h(tag, a, ...kids) {
   const e = document.createElement(tag);
   for (const k in a || {}) { const v = a[k]; if (v == null || v === false) continue;
     if (k === 'text') e.textContent = v; else if (k === 'ic') e.replaceChildren(dom(icon(v[0], v[1] || ''))); else if (k === 'on') for (const ev in v) e.addEventListener(ev, v[ev]);
-    else if (k === 'style') e.style.cssText = v; else e.setAttribute(k, v === true ? '' : v); }
+    else if (k === 'style') e.style.cssText = v;
+    else if (k === 'href') { if (/^https:\/\/[a-z0-9.-]+\.[a-z]{2,}(\/[^\s"'<>]*)?$/i.test(v)) { e.setAttribute('href', v); e.setAttribute('rel', 'noopener noreferrer'); e.setAttribute('target', '_blank'); } }
+    else if (k === 'src') { if (safeImg(v)) e.setAttribute('src', v); }
+    else if (/^on/i.test(k)) continue; else e.setAttribute(k, v === true ? '' : v); }
   kids.flat().forEach(c => c != null && c !== false && e.append(c instanceof Node ? c : String(c)));
   return e;
 }
 const ic = (name, cls) => h('span', { class: 'ico', 'aria-hidden': 'true', ic: [name, cls] });
-/* text with matched ranges in bold, built as nodes */
 function hlText(t, rs) {
   const f = document.createDocumentFragment(); let i = 0;
   (rs || []).slice().sort((a, b) => a[0] - b[0]).forEach(([s, e]) => { if (s < i) return; if (s > i) f.append(t.slice(i, s)); f.append(h('b', { text: t.slice(s, e) })); i = e; });
@@ -28,8 +25,6 @@ function setStopPlace(s, pl) {
   s.custom = { name: pl.name, addr: pl.addr, lat: pl.lat, lng: pl.lng, kind: pl.kind }; s.pid = pl.id;
   if (pl.store) s.type = KIND_TYPE[pl.kind] || 'Shopping'; else if (TYPES[s.type].store) s.type = 'Personal pickup';
 }
-
-/* screen shells: static markup only; content is mounted with DOM APIs in mountAdd() */
 function addScreens(sc) {
   const nav = (title, back) => `<div class="navbar solid"><div class="nl"><button class="backbtn" id="navBack">${back === 'Close' ? '' : icon('chevL')}${back}</button></div><div class="nt" id="navT">${title}</div></div>`;
   if (sc === 'add') return `<div class="page notab addpg" data-scroll="pg-add">${nav('Add stop', 'Close')}
@@ -44,11 +39,9 @@ function mountAdd() {
   const sc = S.c.screen; if (S.view !== 'c' || !['add', 'place', 'store'].includes(sc)) return;
   if (sc === 'add') AS.mount(); else if (sc === 'place') PL.mount(); else ST.mount();
 }
-
-/* ---------- Search (autocomplete) ---------- */
 let acTimer = 0, acSeq = 0;
 const AS = {
-  open(o = {}) { S.c.add = { q: '', res: [], sel: -1, loading: false, replace: o.replace || null, type: o.type || null, back: S.c.screen === 'store' || S.c.screen === 'place' ? 'stops' : S.c.screen }; S.c.screen = 'add'; Maps.ensure(); R(); },
+  open(o = {}) { S.c.add = { q: '', res: [], sel: -1, loading: false, replace: o.replace || null, type: o.type || null, dest: !!o.dest, home: !!o.home, back: S.c.screen === 'store' || S.c.screen === 'place' ? 'stops' : S.c.screen }; S.c.screen = 'add'; Maps.ensure(); R(); },
   mount() {
     const A = S.c.add, i = $('#acq');
     $('#navBack').onclick = () => C.go(A.back || 'home');
@@ -76,8 +69,11 @@ const AS = {
     $('#acClear').style.visibility = A.q ? 'visible' : 'hidden';
     i.setAttribute('aria-expanded', n > 0); i.setAttribute('aria-activedescendant', A.sel >= 0 ? 'ac' + A.sel : '');
     if (q.length < Places.MIN) {
-      el.append(h('div', { class: 'acempty' }, ic('search', 'l'), h('div', { class: 'hl', text: 'Where should your runner stop?' }),
-        h('div', { class: 'fn', text: q ? 'Keep typing… suggestions appear after ' + Places.MIN + ' letters.' : 'Type any store, business, or street address.' })));
+      el.append(h('div', { class: 'acempty' }, ic('search', 'l'), h('div', { class: 'hl', text: A.home ? 'What’s your home address?' : A.dest ? 'Where should everything be delivered?' : 'Where should your runner stop?' }),
+        h('div', { class: 'fn', text: q ? 'Keep typing… suggestions appear after ' + Places.MIN + ' letters.' : A.dest ? 'Type any street address.' : 'Type any store, business, or street address.' })));
+      if (!q && A.dest && S.prefs.home) el.append(h('div', { class: 'group' }, h('button', { class: 'cell tap ac', id: 'acHome', on: { click: () => AS.setDest(null) } }, h('div', { class: 'acic' }, ic('house')), h('div', { class: 'grow' }, h('div', { class: 'acp', text: 'Home' }), h('div', { class: 'acs', text: S.prefs.home.addr })))));
+      if (!q && !A.dest && !A.home && !A.replace) el.append(h('div', { class: 'group-h', text: 'Stores near you' }), h('div', { class: 'chips', id: 'acQuick' }, Places.LOCAL.filter(x => Places.STORE_KINDS.includes(x.kind)).map(x =>
+        h('button', { class: 'chip', id: 'q-' + x.id, on: { click: () => Places.resolve({ src: 'local', place: x, kind: x.kind }).then(AS.chosen) } }, x.name))));
       return;
     }
     if (A.loading) { el.append(h('div', { class: 'acempty compact' }, h('div', { class: 'indet' }), h('div', { class: 'fn', text: 'Searching near Great Neck…' }))); return; }
@@ -99,21 +95,26 @@ const AS = {
     const A = S.c.add; if (A.busy) return; A.busy = true;
     try { const pl = k < A.res.length ? await Places.resolve(A.res[k]) : await Places.freeText(A.q.trim()); AS.chosen(pl); } finally { A.busy = false; }
   },
+  setDest(pl) {
+    if (pl && (!S.prefs.home || !S.prefs.home.addr)) { S.prefs.home = { addr: pl.addr || pl.name, lat: pl.lat, lng: pl.lng }; S.dest = null; }
+    else S.dest = pl ? { key: 'dest', name: pl.name, addr: pl.addr, lat: pl.lat, lng: pl.lng } : null;
+    S.realRoute = null; S.c.screen = S.c.add && S.c.add.back === 'review' ? 'review' : 'stops'; R(); toast(pl ? 'Final drop-off updated. Route and quotes recalculated.' : 'Final drop-off set to Home');
+  },
   chosen(pl) {
     const A = S.c.add; haptic();
+    if (A.home) { S.prefs.home = { addr: pl.addr || pl.name, lat: pl.lat, lng: pl.lng }; S.realRoute = null; S.c.screen = A.back || 'account'; R(); toast('Home address saved'); return; }
+    if (A.dest) { AS.setDest(pl); return; }
     if (A.replace) { const s = S.stops.find(x => x.id === A.replace); if (s) { setStopPlace(s, pl); S.cap = null; } S.c.screen = 'stops'; R(); toast('Location updated'); if (s && pl.store && !s.items.length) ST.edit(s.id); return; }
     if (pl.store) { ST.open(pl); return; }
     const P = typeof TL !== 'undefined' && TL.preset(); S.c.place = { pl, type: A.type || P && TILES[P.key].addrType || 'Personal pickup', what: '', note: '', from: '', value: '', lb: '' }; S.c.screen = 'place'; R();
   }
 };
-
-/* ---------- Personal (non-store) stop details ---------- */
 const PL = {
   mount() {
     const P = S.c.place, b = $('#plBody'); $('#navBack').onclick = () => { S.c.screen = P.stopId ? 'stops' : 'add'; R(); };
     if (P.stopId) $('#navBack').textContent = 'Close';
     const types = [['Personal pickup', 'Pick up'], ['Drop-off', 'Drop off'], ['Custom task', 'Other task']];
-    const what = h('input', { class: 'input', id: 'plWhat', 'aria-label': 'What is it?', placeholder: P.type === 'Drop-off' ? 'What are we dropping off?' : P.type === 'Custom task' ? 'Describe the task' : 'What are we picking up?', maxlength: 120 });
+    const what = h('input', { class: 'input', id: 'plWhat', 'aria-label': 'What is it?', placeholder: P.type === 'Drop-off' ? 'What should your runner drop off?' : P.type === 'Custom task' ? 'Describe the task' : 'What should your runner pick up?', maxlength: 120 });
     what.value = P.what; what.oninput = () => P.what = what.value;
     const note = h('input', { class: 'input', id: 'plNote', 'aria-label': 'Note for runner', placeholder: 'Note for runner (gate code, who to ask…)', maxlength: 200 });
     note.value = P.note; note.oninput = () => P.note = note.value;
@@ -137,14 +138,13 @@ const PL = {
   add() {
     const P = S.c.place, pl = P.pl, old = P.stopId && S.stops.find(x => x.id === P.stopId);
     if (typeof isBlocked === 'function' && (isBlocked(P.what) || isBlocked(P.note))) { toast(TILE_STR.blockedItem); return; }
-    const size = { value: Math.max(0, +P.value || 0), lb: Math.max(0, +P.lb || 0) };   // declared value/weight (courier limits)
+    if (isRide(P.what) || isRide(P.note)) { toast(RIDE_MSG); return; }
+    const size = { value: Math.max(0, +P.value || 0), lb: Math.max(0, +P.lb || 0) };
     if (old) { Object.assign(old, { type: P.type, items: P.what.trim() ? [{ n: P.what.trim(), p: 0 }] : [], note: P.note.trim(), from: P.from || null }, size); S.c.screen = 'stops'; R(); toast('Saved'); return; }
     const s = mkStop(P.type, pl.id, { custom: { name: pl.name, addr: pl.addr, lat: pl.lat, lng: pl.lng, kind: pl.kind }, items: P.what.trim() ? [{ n: P.what.trim(), p: 0 }] : [], note: P.note.trim(), from: P.from || null, ...size });
     S.stops.push(s); S.c.screen = 'stops'; haptic(); R(); toast('Added ' + pl.name);
   }
 };
-
-/* ---------- Store item browser (DoorDash-style) ---------- */
 const ST = {
   async open(pl, stopId) {
     const st = await Catalog.getStore(pl); const [cats, items] = await Promise.all([Catalog.getCategories(st.id), Catalog.getItems(st.id)]);
@@ -167,7 +167,8 @@ const ST = {
     $('#navT').textContent = st.name;
     $('#stHead').replaceChildren(h('div', { class: 'stlogo' }, ic(KIND_IC[st.kind] || 'bag', 'l')),
       h('div', { class: 'grow' }, h('h1', { class: 't1 sttitle', text: st.name }), h('div', { class: 'fn ellip', text: st.kindName + ' · ' + st.addr })),
-      st.note ? h('div', { class: 'stnote cap', text: st.note }) : '');
+      st.note ? h('div', { class: 'stnote cap', text: st.note }) : '',
+      st.src ? h('a', { class: 'stsrc cap', id: 'stSrc', href: st.src.url, text: 'Estimated prices, checked ' + Catalog.CHECKED + ' on ' + st.src.label }) : h('div', { class: 'stsrc cap', text: 'Estimated prices: typical for the area, not from this store.' }));
     const q = $('#stq'); q.placeholder = 'Search ' + st.name; q.value = T.q;
     q.oninput = () => { T.q = q.value; clearTimeout(ST._t); ST._t = setTimeout(ST.search, 150); };
     q.onkeydown = e => { if (e.key === 'Escape') { q.value = ''; T.q = ''; ST.search(); } };
@@ -213,7 +214,8 @@ const ST = {
   paintCart() {
     const T = S.c.store, bar = $('#cartBar'), { n, sub } = ST.sum(); if (!bar) return;
     bar.replaceChildren(); bar.className = n || T.stopId ? 'cartbar show' : 'cartbar';
-    if (n || T.stopId) bar.append(h('button', { class: 'btn', id: 'viewCart', on: { click: ST.openCart } }, h('span', { class: 'cnt num', text: n }), h('span', { text: 'View cart' }), h('span', { class: 'num', text: money(sub) })));
+    if ((n || T.stopId) && !T.cartOpen) bar.append(h('div', { class: 'btnrow' }, h('button', { class: 'btn plain', id: 'viewCart', text: 'Cart (' + n + ')', on: { click: ST.openCart } }),
+      h('button', { class: 'btn', id: 'cartDone', on: { click: ST.commit } }, h('span', { text: T.stopId ? 'Save' : 'Add to trip' }), h('span', { class: 'num', text: money(sub) }))));
     if (T.cartOpen) ST.paintSheet(); else $('#cartSheet').replaceChildren();
   },
   openCart() { S.c.store.cartOpen = true; ST.paintCart(); const c = $('#cartSheet .csheet'); if (c) c.focus(); },
@@ -229,7 +231,7 @@ const ST = {
       h('div', { class: 'grabber' }, h('i')),
       h('div', { class: 'chead' }, h('div', { class: 'grow' }, h('div', { class: 't2', text: 'Your cart' }), h('div', { class: 'fn ellip', text: T.st.name + ' · ' + n + ' item' + (n === 1 ? '' : 's') })), h('button', { class: 'iconbtn', 'aria-label': 'Close cart', ic: ['x', 's'], on: { click: ST.closeCart } })),
       h('div', { class: 'cbody' }, L.length ? h('div', { class: 'group ilist' }, rows) : h('div', { class: 'acempty compact' }, h('div', { class: 'fn', text: 'Your cart is empty. Add items, or keep this stop with no purchases.' })),
-        h('div', { class: 'pbox' }, line('Items (est.)', money(sub)), line('Adds to spending cap (+' + S.pay.capPad + '%)', money(capThis), 'b'))),
+        h('div', { class: 'pbox' }, line('Items (est.)', money(sub)), line('Adds to spending cap, with a small buffer', money(capThis), 'b'))),
       h('div', { class: 'cfoot' }, h('button', { class: 'btn', id: 'cartDone', text: T.stopId ? 'Save · ' + money(sub) : 'Add to trip · ' + money(sub), on: { click: ST.commit } })));
     $('#cartSheet').replaceChildren(h('div', { class: 'cscrim', on: { click: ST.closeCart } }), sheetEl);
   },

@@ -1,21 +1,15 @@
-/* Map abstraction. Maps.render(el, scene) draws the same scene with Google Maps (if MAPS_API_KEY is set
- * and loads) or with the built-in SVG fallback. scene = {pts:[{lat,lng,label,kind}], path:[{lat,lng}...] (in
- * visit order), runner: 0..1 progress along path | null, start:{lat,lng}}. */
 (function () {
   'use strict';
   const NS = 'http://www.w3.org/2000/svg';
   const HAS_KEY = typeof MAPS_API_KEY === 'string' && !!MAPS_API_KEY;
-  let mode = 'fallback', loadP = null; // the Google script is loaded lazily on first map render / first place search
-  const routeCache = new Map(); // final routes only, keyed by stop coordinates
-  /* Dark map to match dark mode (classic styles; with a Map ID, style it in Cloud Console instead). */
+  let mode = 'fallback', loadP = null;
+  const routeCache = new Map();
   const DARK = [['all', 'geometry', '#242f3e'], ['all', 'labels.text.fill', '#9ca5b3'], ['all', 'labels.text.stroke', '#1a2330'], ['road', 'geometry', '#38414e'], ['road', 'geometry.stroke', '#212a37'],
     ['road.highway', 'geometry', '#4b5563'], ['water', 'geometry', '#17263c'], ['poi', 'geometry', '#283548'], ['poi.park', 'geometry', '#1f3a33'], ['transit', 'geometry', '#2f3948']]
     .map(([f, e, c]) => ({ featureType: f, elementType: e, stylers: [{ color: c }] }));
   const mapStyle = () => (matchMedia('(prefers-color-scheme: dark)').matches ? DARK : null);
-  const metricCache = new Map(); // Routes API distance/duration per route
+  const metricCache = new Map();
   let g = null, gmap = null, gObjs = [], gRunner = null, gPath = [], lastKey = '', anim = { cur: 0, target: 0, raf: 0 }, host = null;
-
-  /* ---------- Google ---------- */
   function loadGoogle() {
     if (loadP) return loadP; if (!HAS_KEY) return (loadP = Promise.resolve(false));
     loadP = new Promise(res => { const done = ok => res(ok);
@@ -27,9 +21,7 @@
     document.head.appendChild(s); });
     return loadP;
   }
-
   const accent = () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6D28D9';
-
   function renderGoogle(el, scene) {
     if (!gmap || !el.contains(gmap.getDiv())) {
       el.replaceChildren(); const d = document.createElement('div'); d.style.cssText = 'position:absolute;inset:0'; el.appendChild(d);
@@ -42,7 +34,6 @@
         icon: { path: g.SymbolPath.CIRCLE, scale: p.kind === 'start' ? 6 : (p.kind === 'car' ? 7 : 12), fillColor: p.kind === 'car' ? '#444' : p.kind === 'start' ? '#111' : (p.kind === 'end' ? '#111' : col), fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 } })); });
     gmap.fitBounds(b, { top: 60, bottom: Math.round(el.clientHeight * 0.5), left: 30, right: 30 });
     const path = scene.path; if (path.length < 2) return;
-    /* Real road distance/time from the Routes API replaces the straight-line estimate in #rtm (route review). */
     const metric = k => { const m = metricCache.get(k), el = document.getElementById('rtm'); if (m && el) el.textContent = m.mi.toFixed(1) + ' mi · ~' + fmtMin(m.min + (+el.dataset.dwell || 0)) + ' by road'; if (m && window.onRouteMetric) window.onRouteMetric(m); };
     const rkey = JSON.stringify(path.map(p => [+p.lat.toFixed(5), +p.lng.toFixed(5)]));
     const draw = (pts, real) => { if (real) routeCache.set(rkey, pts);
@@ -52,10 +43,8 @@
     const viaDirections = () => { try { new g.DirectionsService().route({ origin: path[0], destination: path[path.length - 1],
       waypoints: path.slice(1, -1).map(p => ({ location: p, stopover: true })), optimizeWaypoints: false, travelMode: g.TravelMode.DRIVING },
       (res, status) => status === 'OK' ? draw(res.routes[0].overview_path, true) : draw(straight())); } catch (e) { draw(straight()); } };
-    /* Cost rule: no Routes/Directions request until the stops are final (trip confirmed). Before that, straight legs. */
     if (!scene.final) return draw(straight());
     if (routeCache.has(rkey)) { draw(routeCache.get(rkey)); return metric(rkey); }
-    /* Routes API (Route class, preferred). Our solver fixes the stop order (pickup-before-drop-off), so Google only draws roads. */
     const ll = v => (typeof v === 'function' ? v() : v);
     (g.importLibrary ? g.importLibrary('routes') : Promise.reject()).then(lib => {
       if (!lib || !lib.Route) throw new Error('no Route class');
@@ -72,20 +61,16 @@
     let want = t * tot; for (let i = 0; i < L.length; i++) { if (want <= L[i]) { const f = L[i] ? want / L[i] : 0; return { lat: gPath[i].lat() + (gPath[i + 1].lat() - gPath[i].lat()) * f, lng: gPath[i].lng() + (gPath[i + 1].lng() - gPath[i].lng()) * f }; } want -= L[i]; }
     return { lat: gPath[gPath.length - 1].lat(), lng: gPath[gPath.length - 1].lng() };
   }
-
-  /* ---------- Fallback SVG ---------- */
   const W = 400, H = 860;
   function proj(scene) {
     const all = scene.pts.concat(scene.path); let a = Infinity, b = -Infinity, c = Infinity, d = -Infinity;
     all.forEach(p => { a = Math.min(a, p.lat); b = Math.max(b, p.lat); c = Math.min(c, p.lng); d = Math.max(d, p.lng); });
     const k = Math.cos(((a + b) / 2) * Math.PI / 180); const spanX = (d - c) * k || .01, spanY = (b - a) || .01;
-    // fit into upper area (sheet covers bottom ~45%)
     const top = scene.top || 150, bot = scene.bottom || H * 0.43; const box = { x: 48, y: top, w: W - 96, h: Math.max(140, bot - top) }; const s = Math.min(box.w / spanX, box.h / spanY);
     const ox = box.x + (box.w - spanX * s) / 2, oy = box.y + (box.h - spanY * s) / 2;
     return p => [ox + (p.lng - c) * k * s, oy + (b - p.lat) * s];
   }
   function streets() {
-    // deterministic pseudo street network
     let r = 7; const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280; let s = '';
     for (let i = 0; i < 9; i++) { const y = 40 + i * 100 + rnd() * 30; s += `M-20 ${y} C 120 ${y + rnd() * 60 - 30}, 280 ${y + rnd() * 60 - 30}, 420 ${y + rnd() * 40 - 20} `; }
     for (let i = 0; i < 6; i++) { const x = 20 + i * 75 + rnd() * 20; s += `M${x} -20 C ${x + rnd() * 50 - 25} 300, ${x + rnd() * 50 - 25} 600, ${x + rnd() * 30} 880 `; }
@@ -114,7 +99,6 @@
   }
   function placeRunnerSvg(t) { const line = host && host.el.querySelector('#routeLine'), dot = host && host.el.querySelector('#runnerDot'); if (!line || !dot) return;
     const L = line.getTotalLength(), p = line.getPointAtLength(Math.max(0, Math.min(1, t)) * L); dot.setAttribute('transform', `translate(${p.x},${p.y})`); }
-
   function setRunner(t) {
     if (t == null) return; cancelAnimationFrame(anim.raf); anim.target = t; const from = anim.cur, t0 = performance.now(), dur = 1400;
     const step = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); anim.cur = from + (anim.target - from) * e;
@@ -123,7 +107,6 @@
       if (k < 1) anim.raf = requestAnimationFrame(step); };
     anim.raf = requestAnimationFrame(step);
   }
-
   const Maps = {
     get mode() { return mode; }, ensure: () => loadGoogle(),
     render(el, scene, force) {
@@ -139,7 +122,6 @@
       if (redraw && mode !== 'google') placeRunnerSvg(anim.cur);
       if (anim.target !== scene.runner || redraw) setRunner(scene.runner);
     },
-    /* Static, non-interactive SVG for dashboards. */
     staticSvg(scene) { return svgFallback(scene).replace('<g id="runnerDot"', '<g data-static="1"').replace(' id="routeLine"', ''); }
   };
   window.Maps = Maps;

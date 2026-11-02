@@ -1,12 +1,3 @@
-/* Store catalog data provider.
- * Normalized item schema: { id, name, price (USD number, shelf estimate), category (category id), image (URL or null),
- *   icon (fallback glyph key), unit (e.g. "1 gal"), inStock (bool) }.
- * Interface (all async, so a real product feed / API can be swapped in with Catalog.setProvider(p)):
- *   getStore(place)            -> { id, name, kind, addr, note }          place = { id, name, kind, addr }
- *   getCategories(storeId)     -> [{ id, name, count }]
- *   getItems(storeId, catId?)  -> [item]                                   (all items when catId omitted)
- *   searchItems(storeId, q)    -> [item]                                   (searches everything the store carries)
- * The default provider serves sample menus per store kind. Prices are illustrative shelf prices, not live. */
 (function (root) {
   'use strict';
   const C = (id, name, icon, items) => ({ id, name, icon, items });
@@ -53,8 +44,8 @@
       C('alter', 'Alterations', 'scissors', [I('Hem pants', 15.00, 'each'), I('Replace zipper', 20.00, 'each')])
     ],
     post: [
-      C('stamps', 'Stamps & supplies', 'envelope', [I('Forever stamps', 14.60, 'book of 20'), I('Padded envelope', 2.49, 'each'), I('Flat-rate box, medium', 0, 'free, packing')]),
-      C('ship', 'Ship a package', 'box', [I('Priority Mail flat-rate, medium', 19.30, 'per box'), I('Ground Advantage, up to 2 lb', 9.25, 'est.'), I('Certified mail', 5.30, 'per letter')]),
+      C('stamps', 'Stamps & supplies', 'envelope', [I('Forever stamps', 16.40, 'book of 20'), I('Padded envelope', 2.49, 'each'), I('Flat-rate box, medium', 0, 'free, packing')]),
+      C('ship', 'Ship a package', 'box', [I('Priority Mail flat-rate, medium', 25.80, 'per box'), I('Ground Advantage, up to 2 lb', 9.25, 'est.'), I('Certified Mail fee', 5.55, 'plus postage')]),
       C('drop', 'Drop off', 'ret', [I('Drop off prepaid package', 0, 'per package'), I('Pick up held mail', 0, 'ID on file')])
     ],
     shipping: [
@@ -68,17 +59,58 @@
       C('desk', 'Desk supplies', 'tag', [I('Gel pens, black', 8.99, '12 ct'), I('Sticky notes', 6.49, '6 pk'), I('Packing tape', 7.99, '2 rolls')])
     ]
   };
-  /* build normalized items with stable ids */
+  const CHECKED = 'Nov 1, 2026';
+  const REAL = {
+    wholefoods: { match: /whole\s*foods/i, src: ['wholefoodsmarket.com', 'https://www.wholefoodsmarket.com/stores/manhasset'],
+      note: 'Estimated prices. Dairy from Whole Foods online listings, checked ' + CHECKED + '. Other prices are typical estimates. You pay the shelf price.',
+      menu: [
+        C('dairy', 'Milk & cream', 'drop', [I('365 Organic Whole Milk', 7.49, '128 fl oz'), I('Organic Valley Organic Whole Milk', 6.29, '64 oz'), I('Organic Valley Organic 2% Milk', 6.29, '64 oz'), I('Lactaid 2% Reduced Fat Milk', 4.99, '64 fl oz'), I('365 Organic Half and Half', 4.29, '1 qt'), I('365 Organic Heavy Cream', 4.39, '1 pt')])
+      ], fill: ['produce', 'bakery', 'pantry', 'household'] },
+    cvs: { match: /\bcvs\b/i, src: ['cvs.com', 'https://www.cvs.com/store-locator/great-neck-ny-pharmacies/510-middle-neck-road-great-neck-ny-11023/storeid=1963'],
+      note: 'Estimated prices from cvs.com listings, checked ' + CHECKED + '. CVS says prices may vary in store. Over-the-counter items only.',
+      menu: [
+        C('pain', 'Pain & fever', 'pill', [I('CVS Health Ibuprofen 200 mg', 6.99, '50 coated tablets'), I('CVS Dye Free Ibuprofen 200 mg', 11.29, '100 tablets'), I('Tylenol Extra Strength 500 mg', 12.99, '100 caplets')]),
+        C('tissue', 'Tissues', 'leaf', [I('Kleenex Trusted Care tissues', 3.49, '1 box'), I('Kleenex Trusted Care tissues', 7.49, '3 boxes'), I('Puffs Plus Lotion tissues', 6.99, '4 boxes')])
+      ], fill: ['cold', 'firstaid', 'vitamins', 'personal'] },
+    usps: { match: /post\s*office|\busps\b/i, src: ['usps.com', 'https://www.usps.com/ship/first-class-mail.htm'],
+      note: 'Official USPS retail prices, checked ' + CHECKED + '. Priority Mail holiday prices run through Jan 17, 2027.',
+      menu: [
+        C('stamps', 'Stamps', 'envelope', [I('Forever stamps', 16.40, 'book of 20'), I('Postcard stamps', 13.00, 'sheet of 20 · $0.65 each')]),
+        C('ship', 'Priority Mail flat rate', 'box', [I('Flat-rate envelope', 13.90, 'per envelope'), I('Flat-rate box, small', 14.65, 'per box'), I('Flat-rate box, medium', 25.80, 'per box'), I('Flat-rate box, large', 36.10, 'per box'), I('Certified Mail fee', 5.55, 'plus postage')]),
+        C('drop', 'Drop off & pick up', 'ret', [I('Drop off prepaid package', 0, 'per package'), I('Pick up held mail', 0, 'you sign the form')])
+      ] },
+    cleaners: { match: /nu-?clear/i, src: ['nuclearcleaners.com', 'https://nuclearcleaners.com/'],
+      note: 'Nu-Clear does not post prices online. These are estimates from published Long Island cleaner price lists. You pay the counter price.',
+      menu: [
+        C('drop', 'Drop off', 'hanger', [I('Shirt, laundered & pressed', 3.50, 'each · est.'), I('Pants / slacks', 8.00, 'each · est.'), I('Suit, 2-piece', 19.00, 'each · est.'), I('Dress', 17.00, 'each · est.'), I('Coat', 25.00, 'each · est.'), I('Wash & fold', 0, 'priced at counter')]),
+        C('pick', 'Pick up a ready order', 'tag', [I('Pick up ticketed order', 0, 'paid at counter · bring ticket #')]),
+        C('alter', 'Alterations', 'scissors', [I('Hem pants', 15.00, 'each · est.'), I('Replace zipper', 20.00, 'each · est.')])
+      ] },
+    ups: { match: /ups\s*store/i, src: ['theupsstore.com', 'https://locations.theupsstore.com/ny/great-neck/10-bond-st'],
+      note: 'The UPS Store does not post these prices online. Packing and notary prices are estimates. You pay the counter price.',
+      menu: [
+        C('returns', 'Returns & drop-offs', 'ret', [I('Drop off prepaid UPS package', 0, 'per package'), I('Amazon return with QR code', 0, 'per return')]),
+        C('ship', 'Pack & ship', 'box', [I('Pack & ship, small box', 24.99, 'est.'), I('Pack & ship, medium box', 39.99, 'est.')]),
+        C('print', 'Print & notary', 'receipt', [I('Notary', 10.00, 'per signature · est.')])
+      ] }
+  };
+  const GEN = 'Typical prices in the area, not from this store. You pay the shelf price.';
+  const build = (key, menu) => ({ cats: menu.map(c => ({ id: c.id, name: c.name, icon: c.icon })), items: menu.flatMap(c => c.items.map((x, j) => ({ id: key + '.' + c.id + '.' + j, name: x.name, price: x.price, category: c.id, image: null, icon: c.icon, unit: x.unit, inStock: x.inStock !== false, rx: !!x.rx }))) });
   const DB = {};
-  for (const kind in MENUS) DB[kind] = { cats: MENUS[kind].map(c => ({ id: c.id, name: c.name, icon: c.icon })), items: MENUS[kind].flatMap(c => c.items.map((x, j) => ({ id: kind + '.' + c.id + '.' + j, name: x.name, price: x.price, category: c.id, image: null, icon: c.icon, unit: x.unit, inStock: x.inStock !== false, rx: !!x.rx }))) };
+  for (const kind in MENUS) DB[kind] = build(kind, MENUS[kind]);
+  const RKIND = { wholefoods: 'grocery', cvs: 'pharmacy', usps: 'post', cleaners: 'cleaners', ups: 'shipping' };
+  for (const k in REAL) { const R = REAL[k]; DB['r.' + k] = build(k, R.menu.concat((R.fill || []).map(id => MENUS[RKIND[k]].find(c => c.id === id)))); }
+  const realFor = place => { const hay = (place.name || '') + ' ' + (place.addr || ''); for (const k in REAL) if (RKIND[k] === place.kind && REAL[k].match.test(hay) && (k !== 'cleaners' || /172 middle neck/i.test(hay))) return k; return null; };
   const KIND_NAMES = { grocery: 'Grocery', pharmacy: 'Pharmacy · OTC', hardware: 'Hardware', pet: 'Pet supplies', bakery: 'Bakery', cleaners: 'Dry cleaning', post: 'Post office', shipping: 'Shipping & returns', office: 'Office supplies' };
   const stores = {};
   const norm = s => String(s).toLowerCase().replace(/[’']/g, '');
   const SampleProvider = {
-    async getStore(place) { const kind = DB[place.kind] ? place.kind : 'grocery'; const st = { id: place.id, name: place.name, kind, kindName: KIND_NAMES[kind], addr: place.addr || '', note: kind === 'pharmacy' ? 'Over-the-counter items only. Prescription pickups are not available yet.' : '' }; stores[place.id] = st; return st; },
-    async getCategories(storeId) { const d = DB[(stores[storeId] || {}).kind]; return d ? d.cats.map(c => ({ ...c, count: d.items.filter(i => i.category === c.id).length })) : []; },
-    async getItems(storeId, catId) { const d = DB[(stores[storeId] || {}).kind]; return d ? d.items.filter(i => !catId || i.category === catId) : []; },
-    async searchItems(storeId, q) { const d = DB[(stores[storeId] || {}).kind]; const toks = norm(q).split(/\s+/).filter(Boolean); if (!d || !toks.length) return [];
+    async getStore(place) { const kind = DB[place.kind] ? place.kind : 'grocery', rk = realFor({ ...place, kind }), R = rk && REAL[rk];
+      const st = { id: place.id, name: place.name, kind, db: R ? 'r.' + rk : kind, kindName: KIND_NAMES[kind], addr: place.addr || '', note: R ? R.note : GEN, src: R ? { label: R.src[0], url: R.src[1] } : null };
+      stores[place.id] = st; return st; },
+    async getCategories(storeId) { const d = DB[(stores[storeId] || {}).db]; return d ? d.cats.map(c => ({ ...c, count: d.items.filter(i => i.category === c.id).length })) : []; },
+    async getItems(storeId, catId) { const d = DB[(stores[storeId] || {}).db]; return d ? d.items.filter(i => !catId || i.category === catId) : []; },
+    async searchItems(storeId, q) { const d = DB[(stores[storeId] || {}).db]; const toks = norm(q).split(/\s+/).filter(Boolean); if (!d || !toks.length) return [];
       const cn = Object.fromEntries(d.cats.map(c => [c.id, norm(c.name)]));
       return d.items.map(i => { const hay = norm(i.name + ' ' + i.unit), words = hay.split(/[^a-z0-9%]+/); let sc = 0;
         for (const t of toks) { if (words.some(w => w.startsWith(t))) sc += 3; else if (hay.includes(t)) sc += 1; else if (cn[i.category].includes(t)) sc += 0.5; else return null; }
@@ -86,7 +118,7 @@
   };
   let provider = SampleProvider;
   const Catalog = {
-    KINDS: Object.keys(MENUS), KIND_NAMES,
+    KINDS: Object.keys(MENUS), KIND_NAMES, REAL, realFor, CHECKED,
     setProvider(p) { provider = p; }, get provider() { return provider; }, SampleProvider,
     getStore: p => provider.getStore(p), getCategories: id => provider.getCategories(id), getItems: (id, c) => provider.getItems(id, c), searchItems: (id, q) => provider.searchItems(id, q)
   };

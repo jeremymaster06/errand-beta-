@@ -1,5 +1,5 @@
 # [COMPANY NAME] Privacy Policy
-> **Draft, pending attorney review. Not in effect. This is a demo; no service is offered.** [BRACKETS] = placeholders.
+> **Draft for attorney review. Not in effect. This is a demo; no service is offered.** [BRACKETS] = placeholders.
 Effective [DATE]
 
 ## Plain-language summary

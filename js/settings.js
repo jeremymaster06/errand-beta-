@@ -1,50 +1,54 @@
-/* SETTINGS: the one place for every customer price input and runner pay rate. UI code reads from here;
- * no price or rate is hard-coded in screens. Adam's per-minute pricing drops in under SETTINGS.pricing.engine
- * (passed as inputs to the unmodified engine). There is NO minimum trip fee (Jeremy rejected $54).
- * Prototype estimates only: the server sets and verifies the final price. */
 'use strict';
+const jobRange = T => T.max == null ? T.min + ' or more jobs' : (T.min ? T.min + ' to ' + T.max : 'up to ' + T.max) + ' jobs';
 const SETTINGS = {
   pricing: {
-    engine: {},              // overrides for PricingEngine inputs (empty = engine spec defaults)
-    capPadPct: 20            // spending-cap buffer (%) above the item estimate
+    engine: {},
+    capPadPct: 20
   },
-  line: {                    // Hold My Spot. Rates PENDING JEREMY (Adam is remodeling vs a $50 / 2 h competitor)
-    pending: 'Pending Jeremy',
-    bookingFee: 15, hourly: 40, minHours: 2, capHours: 12,   // capHours: most hours one booking can run
-    defaultHours: 2, incrementMin: 15, leadMinutes: 120,
-    noShowGraceMin: 15, noShowFee: 3
+  line: {
+    capHours: 12, incrementMin: 15, leadMinutes: 120, defaultHours: 2,
+    noShowGraceMin: 15
   },
-  dropoff: {                 // standalone drop-off (no store stop). Price PENDING JEREMY (Adam: $29 to clear break-even)
-    pending: 'Pending Jeremy', standalonePrice: 29
+  timing: {
+    flexWindowHours: 3, flexLeadMin: 30, flexBatchShare: 1,
+    windowStarts: [8, 10, 12, 14, 16, 18], windowHours: 2, windowCount: 8
   },
-  timing: {                  // checkout timing. A flexible window lets dispatch batch the order (engine batch_share)
-    pending: 'Pending Jeremy', flexWindowHours: 3, flexLeadMin: 30, flexBatchShare: 1,
-    scheduledWindows: [['today5', 'Today 5:00–7:00 PM'], ['sat10', 'Sat 10:00 AM–12:00 PM'], ['sun9', 'Sun 9:00–11:00 AM']]
-  },
-  courier: {                 // courier handoff: OFF, demo only. No partner contract exists (Lex, Oct 25)
-    enabled: false,          // never true until a written contract names customer-to-customer drop-offs
-    partner: 'Partner Courier (demo)', fee: 10, valueCap: 100, maxLb: 50,
-    banned: [                // matched on item names/notes; weight and value are checked from the item fields
-      { id: 'alcohol', label: 'Alcohol', re: '\\b(alcohol|beer|wine|liquor|vodka|whiskey|tequila|rum|gin|champagne|hard seltzer)\\b' },
-      { id: 'rx', label: 'Prescriptions', re: '\\b(prescriptions?|rx|medications?)\\b' },
-      { id: 'age', label: 'Age-restricted items', re: '\\b(tobacco|cigars?|cigarettes?|vapes?|e-?cig\\w*|nicotine|cannabis|lottery|firearms?|ammo|ammunition)\\b' },
-      { id: 'giftcard', label: 'Gift cards', re: '\\bgift ?cards?\\b' }
+  rates: {
+    fields: [
+      ['base', 'Errand, up to 3 stops', '$ per errand'],
+      ['extraStop', 'Each extra stop', '$ per stop'],
+      ['bigShop', 'Big grocery shop, 1 store', '$ per shop'],
+      ['asap', 'ASAP surcharge', '$ per errand'],
+      ['lineHourly', 'Line sitting', '$ per hour'],
+      ['lineMin', 'Line sitting minimum', 'hours']
     ]
   },
-  claims: {                  // reliability claims (Lex): only true claims are on. Off claims show as "pending" in the prototype only
-    prototype: true,
-    list: [
-      { id: 'w2', text: 'W-2 runners', on: true },
-      { id: 'tracking', text: 'Live tracking during your sit', on: true },
-      { id: 'insured', text: 'Insured', on: false },   // on only once the policies are bought
-      { id: 'vetted', text: 'Vetted', on: false }      // on only once background checks are running
+  areas: [['gnp', 'Great Neck Plaza', 40.7932, -73.7352], ['gne', 'Great Neck Estates', 40.7870, -73.7390], ['man', 'Manhasset', 40.7979, -73.6996], ['pw', 'Port Washington', 40.8257, -73.6982]],
+  plan: {
+    label: 'Placeholder pricing', pilotJobs: 30, pilotWeeks: 6,
+    tiers: [
+      { key: 'starter', name: 'Starter', price: 25, min: 0, max: 15, cashouts: 0 },
+      { key: 'regular', name: 'Regular', price: 75, min: 16, max: 50, cashouts: 0 },
+      { key: 'pro', name: 'Pro', price: 125, min: 51, max: null, cashouts: 2 }
     ]
   },
-  tiles: {                   // final (Lex, Oct 25)
-    postMaxDeclaredValue: 500, cleaningCoverCap: 300, maxItemValue: 1000, claimDays: 14, weeklyPriceNoticeDays: 7
+  payouts: {
+    weeklyDay: 5, minActiveDays: 14,
+    weekly: 'Weekly payouts are always free.',
+    pro: 'Pro plan includes 2 free instant cash-outs a month (eligibility applies). Weekly payouts are always free.',
+    eligibility: 'Instant cash-outs need at least 14 days active and no unresolved chargebacks. Never tied to ratings, acceptance or hours.'
   },
-  pay: {                     // runner pay: Proposed, pending Jeremy
-    perTrip: 10, perStop: 2, waitRate: 0.30, waitGraceMin: 5, lineRate: 0.30, baseHourly: 17, otAfterHours: 40, otFactor: 1.5
-  }
+  subscription: {
+    version: 'sub-v4',
+    disclosure: (P, T) => 'Free pilot: your first ' + P.pilotJobs + ' jobs or ' + P.pilotWeeks + ' weeks, whichever comes first. After that, ' + T.name + ' is $' + T.price + ' a month for ' + jobRange(T) + ', billed to your card separately each month. Never taken from your payouts. No commission and no per-job fees. ' + (T.cashouts ? SETTINGS.payouts.pro : SETTINGS.payouts.weekly) + ' If you go over your plan’s jobs in a month, we offer an upgrade you can accept or decline. We never charge you automatically. Change plan or cancel anytime in Account > Subscription.',
+    consent: (P, T) => 'I choose ' + T.name + ': free for my first ' + P.pilotJobs + ' jobs or ' + P.pilotWeeks + ' weeks, then $' + T.price + ' a month for ' + jobRange(T) + ', billed to my card until I change or cancel.',
+    change: (T, F) => 'I switch from ' + F.name + ' to ' + T.name + ': $' + T.price + ' a month for ' + jobRange(T) + ', billed to my card until I change or cancel.'
+  },
+  card: { pct: 0.029, fixed: 0.30 },
+  tips: [0, 3, 5, 8],
+  tiles: {
+    postMaxDeclaredValue: 500, maxItemValue: 1000, claimDays: 14
+  },
+  planNote: 'Everyone gets the same app and the same listing. Nothing you pay changes how customers find or rank you.'
 };
-if (typeof module !== 'undefined') module.exports = { SETTINGS };
+if (typeof module !== 'undefined') module.exports = { SETTINGS, jobRange };

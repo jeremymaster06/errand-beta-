@@ -6,7 +6,7 @@ test('no password or hashing code anywhere in auth.js', () => {
   assert.ok(!/PBKDF2|deriveBits|importKey|type:\s*'password'|auPw|validPw|verify\(|AUTH_CFG/.test(SRC), 'password/hash code found');
   assert.ok(!('hash' in AUTHX) && !('verify' in AUTHX) && !('validPw' in AUTHX));
   assert.ok(!Object.values(AUTH_STR).some(s => /password is incorrect/i.test(s)), 'wrong-password error still present');
-  assert.strictEqual(AUTH_STR.demo, "Demo sign-in — don't use a real password");
+  assert.ok(/No password/.test(AUTH_STR.demo));
 });
 test('account records keep only whitelisted keys (legacy password/hash/salt stripped)', () => {
   assert.deepStrictEqual(ACCOUNT_FIELDS, ['id', 'name', 'contact', 'createdAt', 'acks']);
@@ -31,7 +31,7 @@ test('every gated screen uses the one shared session check', () => {
   assert.ok(/if \(!AU\.session\(\)\)/.test(app), 'R() must gate on AU.session()');
   assert.ok(/require\(\) \{ if \(AU\.session\(\)\)/.test(SRC) && /render\(\) \{[^]*?AU\.session\(\)/.test(SRC), 'require/render must use session()');
   assert.ok(!/AU\.user\(|typeof AU/.test(app + line + SRC), 'a second session check exists');
-  assert.ok(/C\.confirm|confirm\(\) \{\s*if \(!AU\.require\(\)\)/.test(app) && /clockIn\(\) \{ if \(!AU\.require\(\)\)/.test(app) && /book_\(\) \{\s*if \(!AU\.require\(\)\)/.test(line));
+  assert.ok(/C\.confirm|confirm\(\) \{\s*if \(!AU\.require\(\)\)/.test(app) && /const me = \(\) => AU\.session\(\)/.test(app) && /accept\(\) \{\s*const T = RN\.offer\(\), r = RN\.me\(\)/.test(app) && /book_\(\) \{\s*if \(!AU\.require\(\)\)/.test(line));
 });
 test('markdown parsed to nodes, never HTML', () => {
   const made = []; const mk = tag => { const n = { tag, kids: [], append(...k) { this.kids.push(...k); } }; made.push(n); return n; };

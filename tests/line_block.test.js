@@ -1,12 +1,12 @@
-// Hold My Spot: a booking at a blocked venue (e.g. a DMV) must be rejected, even if book_() is called directly.
+// Line sitting: a booking at a blocked venue (e.g. a DMV) must be rejected, even if book_() is called directly.
 const test = require('node:test'), assert = require('node:assert'), fs = require('fs'), path = require('path'), vm = require('vm');
 function load() {
-  const toasts = [], ctx = { AU: { require: () => true }, SETTINGS: require('../js/settings.js').SETTINGS, S: { c: { screen: 'lineReview', ln: null }, line: null }, R() {}, haptic() {}, toast: t => toasts.push(t), h() { return {}; }, icon: () => '', $: () => null, money: v => '$' + v, console };
+  const toasts = [], ctx = { AU: { require: () => true }, SETTINGS: require('../js/settings.js').SETTINGS, S: { c: { screen: 'lineReview', ln: null }, line: null, pay: { method: { kind: 'test', label: 'Test card' } }, runners: { r1: { id: 'r1', name: 'Ann', rates: { lineHourly: 30, lineMin: 1 } } } }, runnerReady: () => true, lineOk: r => !!(r.rates && r.rates.lineHourly > 0), linePrice: (r, h) => ({ hours: Math.max(r.rates.lineMin, h), total: r.rates.lineHourly * Math.max(r.rates.lineMin, h) }), lineContract: () => 'contract', notify() {}, R() {}, haptic() {}, toast: t => toasts.push(t), h() { return {}; }, icon: () => '', $: () => null, money: v => '$' + v, console };
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/line.js'), 'utf8') + '\nthis.LN = LN; this.lineBlocked = lineBlocked;', ctx);
   return { ctx, toasts };
 }
-const form = place => ({ place, start: Date.now() + 3 * 3600e3, hours: 3 });
+const form = (place, runner = 'r1') => ({ place, start: Date.now() + 3 * 3600e3, hours: 3, runner, agree: true });
 test('DMV venue is blocked', () => { const { ctx } = load(); assert.ok(ctx.lineBlocked({ name: 'DMV Garden City', addr: '801 Franklin Ave' })); });
 test('booking at a DMV is rejected', () => {
   const { ctx, toasts } = load();
@@ -25,4 +25,17 @@ test('booking at an allowed venue goes through', () => {
   const { ctx } = load();
   ctx.S.c.ln = form({ name: 'Apple Fifth Avenue', addr: '767 5th Ave, New York, NY', lat: 40.76, lng: -73.97, types: [] });
   ctx.LN.book_(); assert.ok(ctx.S.line && ctx.S.line.status === 'requested');
+  assert.strictEqual(ctx.S.line.runner, 'r1'); assert.strictEqual(ctx.S.line.est.total, 90); assert.strictEqual(ctx.S.line.contract, 'contract');
+});
+test('line sitting is never auto-assigned: no runner picked, no booking', () => {
+  const { ctx, toasts } = load();
+  ctx.S.c.ln = form({ name: 'Apple Fifth Avenue', addr: '767 5th Ave, New York, NY', lat: 40.76, lng: -73.97, types: [] }, null);
+  ctx.LN.book_(); assert.strictEqual(ctx.S.line, null); assert.match(toasts[0], /Choose a runner/);
+});
+test('line sitting needs the consent box: nothing booked without it, consent logged with it', () => {
+  const { ctx, toasts } = load();
+  ctx.S.c.ln = { ...form({ name: 'Apple Fifth Avenue', addr: '767 5th Ave, New York, NY', lat: 40.76, lng: -73.97, types: [] }), agree: false };
+  ctx.LN.book_(); assert.strictEqual(ctx.S.line, null); assert.match(toasts[0], /agree/);
+  ctx.S.c.ln.agree = true; ctx.LN.book_();
+  assert.ok(ctx.S.line.consent && /Demo only/.test(ctx.S.line.consent.text) && ctx.S.line.consent.at);
 });

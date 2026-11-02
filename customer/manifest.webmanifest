@@ -2,12 +2,12 @@
  "id": "./",
  "name": "ErrandCo",
  "short_name": "ErrandCo",
- "description": "Errands and Hold My Spot",
+ "description": "Errands and line sitting from a local runner you pick",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
  "background_color": "#ffffff",
- "theme_color": "#6D28D9",
+ "theme_color": "#0B7A53",
  "icons": [
   {
    "src": "icons/icon-192.png",

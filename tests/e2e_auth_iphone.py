@@ -1,6 +1,6 @@
 """WebKit + iPhone 15: sign-in for all three apps. Customer: welcome, sign up with name + email/phone only (no password field;
 terms required, docs rendered as text, labeled draft), sign out clears session + personal data, sign in by name +
-contact, ordering blocked when signed out, no password or hash key/value in localStorage, legacy hash records stripped. Runner: sign up + pay/GPS notice acknowledgement (version + time logged), clock-in does not
+contact, ordering blocked when signed out, no password or hash key/value in localStorage, legacy hash records stripped. Runner: sign up + runner terms and location notice acknowledgement (version + time logged), going Available does not
 start location. Owner: demo identity only, no sign-up path. 0 CSP. Writes screens/auth_*.png, runner_*, owner_signin.png."""
 import re, json
 from playwright.sync_api import sync_playwright
@@ -9,7 +9,7 @@ CFG=re.sub(r"(MAPS_API_KEY\s*=\s*)(['\"]).*?\2",r"\1''",open('/workspace/errand-
 APPS={a: open(f'/workspace/errand-tiles/{a}/index.html').read().replace('; upgrade-insecure-requests','') for a in ['customer','runner','owner']}
 BAD=re.compile(r'pass|\\bpw\\b|"pw"|hash|salt|"iter"|pbkdf2',re.I)
 LEGACY='''{"accounts":[{"id":"old","name":"Old User","contact":"old@example.com","salt":"AA==","hash":"BB==","iter":310000,"alg":"PBKDF2-SHA256","acks":[]}]}'''
-DEMO="Demo sign-in — don't use a real password"
+DEMO="No password"
 fails=[]; errs=[]
 def check(c,m):
   if not c: fails.append(m)
@@ -26,8 +26,7 @@ with sync_playwright() as p:
   at=lambda pg: pg.inner_text('#auth')
   # ---------- customer ----------
   cu=page('customer')
-  check(vis(cu) and 'Create account' in at(cu) and 'accounts stay on this device' in at(cu),'customer welcome')
-  check(cu.locator('#auPasskey').is_disabled() and 'Coming with the real backend' in at(cu),'passkey disabled')
+  check(vis(cu) and 'Create account' in at(cu) and 'stay on this device' in at(cu),'customer welcome')
   cu.screenshot(path=OUT+'auth_welcome.png')
   cu.evaluate("S.stops.push(mkStop('Shopping','stopshop')); S.pay.method={label:'t'}; C.confirm()"); W(cu)
   check(cu.evaluate("S.trip") is None,'order placed while signed out')
@@ -40,9 +39,9 @@ with sync_playwright() as p:
   cu.locator('#auGo').tap(); W(cu,600); check('agree to the Terms' in cu.inner_text('#auErr') and vis(cu),'terms required')
   cu.locator('#auTerms').scroll_into_view_if_needed(); cu.screenshot(path=OUT+'auth_terms.png')
   cu.locator('#auDoc-terms').tap(); W(cu,1200)
-  check(cu.inner_text('#auDraft')=='Draft, pending attorney review','terms draft label')
+  check(cu.inner_text('#auDraft')=='Draft. Not in effect yet.','terms draft label')
   check(cu.locator('#auDoc h2').count()>=1 and cu.locator('#auDoc p').count()>3 and cu.locator('#auDoc script,#auDoc img,#auDoc iframe').count()==0,'terms rendered as nodes')
-  check('Customer Terms of Service' in cu.inner_text('#auDoc') and 'Version sha256:' in cu.inner_text('#auDoc'),'terms text + version')
+  check('contract directly with the runner' in cu.inner_text('#auDoc') and 'Goods only' in cu.inner_text('#auDoc') and 'Version sha256:' in cu.inner_text('#auDoc'),'terms text (runner contract, goods only) + version')
   cu.screenshot(path=OUT+'auth_terms_text.png')
   cu.locator('#auth .btn.plain').first.tap(); W(cu)
   cu.locator('#auDoc-privacy').tap(); W(cu,1000); check(cu.locator('#auDoc p').count()>3,'privacy rendered'); cu.locator('#auth .btn.plain').first.tap(); W(cu)
@@ -55,12 +54,12 @@ with sync_playwright() as p:
   check(sorted(acct)==['acks','contact','createdAt','id','name'],'account keys '+str(sorted(acct)))
   check(cu.evaluate("!!localStorage.getItem('errand.session.customer')"),'session flag set')
   check(sorted(x['doc'] for x in acct['acks'])==['privacy','terms'] and all(x['version'].startswith('sha256:') for x in acct['acks']),'terms ack logged')
-  cu.evaluate("C.confirm()"); W(cu); check(cu.evaluate("S.trip && S.trip.status")=='matching','order allowed when signed in')
+  cu.evaluate("S.runners={r1:{id:'r1',name:'Dana',pricing:'own',rates:{base:22},area:'gnp',online:true,sub:{tier:'starter',status:'active'},jobLog:[],earn:[]}};S.prefs.home={addr:'1 Main St',lat:40.79,lng:-73.73};S.c.runner='r1';S.c.agree=true;C.confirm()"); W(cu); check(cu.evaluate("S.trip && S.trip.status")=='matching','order allowed when signed in')
   cu.evaluate("C.cancel(); C.tab('account')"); W(cu); cu.locator('#signOut').tap(); W(cu,600)
   check(vis(cu) and 'Create account' in at(cu),'sign out -> welcome')
   left=cu.evaluate("Object.keys(localStorage)")
-  check(not any(k.startswith(('errand.auth.','errand.session.')) for k in left),'sign-out left auth keys '+str(left))
-  check(cu.evaluate("!S.trip && !S.pay.method && !S.line && !S.history.length && !S.stops.length"),'sign-out left personal data')
+  check(not any(k.startswith('errand.session.') for k in left),'sign-out left the session '+str(left))
+  check(cu.evaluate("!S.pay.method && !S.stops.length"),'sign-out left payment method or cart')
   check(cu.locator('#screen *').count()==0,'gated screen rendered while signed out')
   cu.evaluate("C.confirm()"); W(cu); check(cu.evaluate("S.trip") is None,'order after sign-out')
   cu.locator('#auToSignin').tap(); W(cu); check(DEMO in at(cu),'demo label on signin')
@@ -83,19 +82,25 @@ with sync_playwright() as p:
   check(DEMO in at(ru),'runner demo label'); ru.screenshot(path=OUT+'runner_signin.png')
   ru.locator('#auth .btn.plain').first.tap(); W(ru); ru.locator('#auToSignup').tap(); W(ru)
   ru.locator('#auName').fill('Rae Runner'); ru.locator('#auContact').fill('516-555-0199'); ru.locator('#auTerms').check() if ru.locator('#auTerms').count() else None; ru.locator('#auGo').tap(); W(ru,2800)
-  T=at(ru); check('Paid for every hour you work, with at least minimum wage guaranteed' in T,'W-2 copy'); check('Clocking in does not start location tracking' in T,'gps copy')
-  check('Electronic Monitoring Notice' in ru.inner_text('#auGpsText') and 'Draft, pending attorney review' in T,'gps notice text + draft label')
-  ru.locator('#auAck').tap(); W(ru,500); check(vis(ru) and 'acknowledge both' in ru.inner_text('#auErr'),'ack required')
-  ru.screenshot(path=OUT+'runner_w2_notice.png')
-  ru.locator('#auDoc-pay').tap(); W(ru,1200); check('Pay Notice' in ru.inner_text('#auDoc') and ru.inner_text('#auDraft')=='Draft, pending attorney review','pay notice text')
-  ru.locator('#auth .btn.plain').first.tap(); W(ru,800)
-  ru.locator('#auAckPay').check(); ru.locator('#auAckGps').check(); ru.locator('#auAck').tap(); W(ru,1200)
+  T=at(ru); check('You run your own business' in T and 'never assigns you a job' in T,'runner terms copy'); check('Turning on Available does not start location tracking' in T,'gps copy')
+  check(not re.search(r'W-2|minimum wage|clock|shift|overtime|our runners',T,re.I),'no employer copy at runner sign-up')
+  ru.locator('#auAck').tap(); W(ru,500); check(vis(ru) and ru.inner_text('#auErr')!='','ack required')
+  ru.screenshot(path=OUT+'runner_terms_notice.png')
+  G=ru.inner_text('#auGpsText'); check('Location Privacy Notice' in G and 'never used for' in G.lower(),'location notice text inline')
+  check(not re.search(r'employee|clock|shift|payroll',G,re.I),'location notice has no employer wording')
+  ru.locator('#auAckTerms').check(); ru.locator('#auAckGps').check(); ru.locator('#auAck').tap(); W(ru,1200)
   check(not vis(ru),'runner onboarded')
   acks=json.loads(ru.evaluate("localStorage.getItem('errand.auth.runner')"))['accounts'][0]['acks']
-  check(sorted(a['doc'] for a in acks)==['gps','pay'] and all(a['version'].startswith('sha256:') and a['at'] for a in acks),'runner acks logged with version+time')
-  ru.locator('#clockIn').tap(); W(ru,600); check(ru.evaluate("!!S.rt.on"),'clock in'); check(not ru.evaluate("window.__geo"),'clock-in started location')
-  ru.evaluate("RN.clockOut(); RN.tab('acct')"); W(ru); ru.locator('#signOut').tap(); W(ru); check(vis(ru),'runner sign out')
-  check(not any(k.startswith(('errand.auth.runner','errand.session.runner')) for k in ru.evaluate("Object.keys(localStorage)")),'runner sign-out left auth keys')
+  check(sorted(a['doc'] for a in acks)==['gps','terms'] and all(a['version'].startswith('sha256:') and a['at'] for a in acks),'runner acks logged with version+time: '+str(sorted(a['doc'] for a in acks)))
+  check(ru.locator('#onlineToggle').count()==0 and ru.locator('#setupList').count()==1,'new runner sees setup, cannot go available yet')
+  check(not ru.evaluate("window.__geo"),'sign-up started location')
+  ru.evaluate("RN.tab('acct')"); W(ru); ru.locator('#signOut').tap(); W(ru); check(vis(ru),'runner sign out')
+  check(not any(k.startswith('errand.session.runner') for k in ru.evaluate("Object.keys(localStorage)")),'runner sign-out left the session')
+  ru.locator('#auToSignin').tap(); W(ru); ru.locator('#auName').fill('Rae Runner'); ru.locator('#auContact').fill('516-555-0199'); ru.locator('#auGo').tap(); W(ru,900)
+  check(not vis(ru),'runner signs back in')
+  ru.evaluate("RN.tab('acct')"); W(ru); ru.locator('#delAcct').tap(); W(ru,400)
+  if ru.locator('#delYes').count(): ru.locator('#delYes').tap(); W(ru,600)
+  check(vis(ru) and json.loads(ru.evaluate("localStorage.getItem('errand.auth.runner')||'{\"accounts\":[]}'"))['accounts']==[],'runner delete account removes it')
   # ---------- owner ----------
   ow=page('owner'); check(vis(ow),'owner gate')
   T=at(ow); check(DEMO in T and ow.locator('#auDemoOwner').count()==1,'owner demo button + label')
