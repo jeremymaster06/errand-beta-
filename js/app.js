@@ -132,7 +132,7 @@ const C = {
       window: q.timing === 'flex' ? ORD.flexWindow() : null, at: Date.now(), dest: { name: dest.name, addr: dest.addr, lat: dest.lat, lng: dest.lng },
       stops: S.stops.map(s => ({ ...s, items: s.items.map(i => ({ ...i })) })), contract: errandContract(S.stops, q, r, dest), chat: [], proof: [], counter: null, preset: null, subs: S.subs, notes: S.c.note || '', consent: { text: agreeText(q), version: 'job-v1', at: Date.now() } };
     S.c.agree = false; S.c.runner = null; S.c.route = null; S.stops = []; S.dest = null; S.cap = null; S.c.note = ''; S.realRoute = null;
-    notify('r', 'New request from ' + custName() + ': ' + S.stops.length + ' stop' + (S.stops.length === 1 ? '' : 's') + ', ' + money(q.runner.price), 'drive', r.id);
+    notify('r', 'New request from ' + custName() + ': ' + S.trip.stops.length + ' stop' + (S.trip.stops.length === 1 ? '' : 's') + ', ' + money(q.runner.price), 'drive', r.id);
     S.c.screen = 'tracking'; R();
   },
   cancel() { const T = S.trip; if (!T) return; const free = T.status === 'matching' || T.status === 'declined'; if (T.runner) notify('r', 'The customer cancelled their errand', 'drive', T.runner); S.trip = null; S.c.screen = 'home'; R(); toast(free ? 'Errand cancelled. No charge.' : 'Errand cancelled. You pay only for items already bought.'); },

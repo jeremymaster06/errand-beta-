@@ -100,6 +100,8 @@ with sync_playwright() as p:
   check(cu.evaluate("!!(S.trip&&S.trip.consent&&S.trip.consent.at)"),'checkout consent logged on the order')
   check(cu.evaluate("S.trip&&S.trip.status")=='matching','trip requested')
   check(cu.evaluate("S.trip.runner")=='test-runner','trip goes only to the picked runner')
+  n_st=cu.evaluate("S.trip.stops.length"); note=cu.evaluate("(S.notes.filter(n=>n.to==='r'&&n.text.startsWith('New request')).pop()||{}).text||''")
+  check(n_st>0 and (': %d stop%s, $22.00' % (n_st,'' if n_st==1 else 's')) in note,'runner notification counts the real stops: '+note)
   W(ru,600)
   check(ru.locator('#offerCard').count()==1,'runner sees request details')
   check('$22.00' in ru.inner_text('#offerCard') and 'Final drop-off' in ru.inner_text('#offerCard'),'runner sees pay and drop-off before accepting')

@@ -25,14 +25,16 @@
   function renderGoogle(el, scene) {
     if (!gmap || !el.contains(gmap.getDiv())) {
       el.replaceChildren(); const d = document.createElement('div'); d.style.cssText = 'position:absolute;inset:0'; el.appendChild(d);
-      gmap = new g.Map(d, { center: scene.start || scene.pts[0], zoom: 14, disableDefaultUI: true, gestureHandling: 'greedy', mapId: MAPS_MAP_ID || undefined, styles: MAPS_MAP_ID ? undefined : mapStyle() });
+      gmap = new g.Map(d, { center: scene.start || scene.pts[0], zoom: 14, disableDefaultUI: true, keyboardShortcuts: false, gestureHandling: 'greedy', mapId: MAPS_MAP_ID || undefined, styles: MAPS_MAP_ID ? undefined : mapStyle() });
     }
     gObjs.forEach(o => o.setMap(null)); gObjs = [];
     const b = new g.LatLngBounds(); const col = accent();
     scene.pts.forEach(p => { b.extend(p);
       gObjs.push(new g.Marker({ map: gmap, position: p, label: p.label ? { text: String(p.label), color: '#fff', fontWeight: '700' } : undefined,
         icon: { path: g.SymbolPath.CIRCLE, scale: p.kind === 'start' ? 6 : (p.kind === 'car' ? 7 : 12), fillColor: p.kind === 'car' ? '#444' : p.kind === 'start' ? '#111' : (p.kind === 'end' ? '#111' : col), fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 } })); });
-    gmap.fitBounds(b, { top: 60, bottom: Math.round(el.clientHeight * 0.5), left: 30, right: 30 });
+    const spots = new Set(scene.pts.map(p => p.lat.toFixed(5) + ',' + p.lng.toFixed(5)));
+    if (spots.size < 2) { gmap.setCenter(scene.pts[0] || scene.start); gmap.setZoom(15); }
+    else gmap.fitBounds(b, { top: 60, bottom: Math.round(el.clientHeight * 0.5), left: 30, right: 30 });
     const path = scene.path; if (path.length < 2) return;
     const metric = k => { const m = metricCache.get(k), el = document.getElementById('rtm'); if (m && el) el.textContent = m.mi.toFixed(1) + ' mi · ~' + fmtMin(m.min + (+el.dataset.dwell || 0)) + ' by road'; if (m && window.onRouteMetric) window.onRouteMetric(m); };
     const rkey = JSON.stringify(path.map(p => [+p.lat.toFixed(5), +p.lng.toFixed(5)]));

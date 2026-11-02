@@ -1,5 +1,5 @@
 const TAG = new URL(self.registration.scope).pathname.split('/').filter(Boolean).pop() || 'root';
-const CACHE = 'errandco-v19-' + TAG;
+const CACHE = 'errandco-v20-' + TAG;
 const STATIC = /\.(?:html|js|css|svg|png|jpg|jpeg|webp|ico|woff2?|webmanifest)$/i;
 const NEVER = /\/(?:api|auth|login|logout|session|oauth)(?:\/|$)/i;
 self.addEventListener('install', () => self.skipWaiting());
